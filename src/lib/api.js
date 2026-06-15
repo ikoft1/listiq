@@ -10,7 +10,7 @@ export async function searchProducts(query) {
     return []
   }
 }
-
+ 
 export async function getProductPrices(productId) {
   try {
     const res = await fetch(`${BASE}/products/${productId}/prices`)
