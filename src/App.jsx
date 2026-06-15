@@ -8,7 +8,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [guest, setGuest] = useState(false)
-
+ 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user || null)
