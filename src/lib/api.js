@@ -1,8 +1,8 @@
-const BASE = 'https://e-katanalotis.gov.gr'
+const BASE = 'https://listiq-api.ikoft3.workers.dev/api'
 
 export async function searchProducts(query) {
   try {
-    const res = await fetch(`${BASE}/products/search?q=${encodeURIComponent(query)}`)
+    const res = await fetch(`${BASE}/products?search=${encodeURIComponent(query)}`)
     if (!res.ok) return []
     const data = await res.json()
     return data?.products || data || []
