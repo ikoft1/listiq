@@ -14,7 +14,10 @@ export async function searchProducts(query, page = 1) {
     const data = await res.json()
     const q = query.toLowerCase()
     const products = (data.products || [])
-      .filter(p => p.name.toLowerCase().includes(q))
+      .filter(p => {
+  const normalize = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  return normalize(p.name).includes(normalize(query))
+})
       .map(p => {
         const brand = p.brand?.trim() || ''
         const name = cleanName(p.name, brand)
