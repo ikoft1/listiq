@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './AuthPage.css'
 
-export default function AuthPage() {
+export default function AuthPage({ onGuest }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState('login')
@@ -15,7 +15,6 @@ export default function AuthPage() {
     setLoading(true)
     setError(null)
     setMessage(null)
-
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError('Λάθος email ή κωδικός')
@@ -32,12 +31,10 @@ export default function AuthPage() {
       <div className="auth-card">
         <h1 className="auth-logo">Listiq</h1>
         <p className="auth-sub">Έξυπνη λίστα αγορών</p>
-
         <div className="auth-tabs">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Σύνδεση</button>
           <button className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>Εγγραφή</button>
         </div>
-
         <form onSubmit={handleSubmit} className="auth-form">
           <input
             type="email"
@@ -61,9 +58,8 @@ export default function AuthPage() {
             {loading ? '...' : mode === 'login' ? 'Σύνδεση' : 'Εγγραφή'}
           </button>
         </form>
-
         <p className="auth-skip">
-          <button onClick={() => {}}>Συνέχεια χωρίς λογαριασμό →</button>
+          <button onClick={onGuest}>Συνέχεια χωρίς λογαριασμό →</button>
         </p>
       </div>
     </div>
