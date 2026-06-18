@@ -152,6 +152,13 @@
   text-decoration: none;
   padding: 8px 16px;
   border: 1px solid var(--border);
+.result-loadmore {
+  color: var(--green);
+  font-weight: 500;
+  justify-content: center;
+}
+
+  
   border-radius: 20px;
 }
 
