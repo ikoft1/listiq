@@ -1,18 +1,10 @@
 const WORKER = 'https://listiq-api.ikoft3.workers.dev'
 
 function cleanName(name, brand) {
-  if (!brand) return name
-  let n = name
-  // Αφαίρεσε brand από αρχή
-  const startRegex = new RegExp(`^${brand}\\s*`, 'i')
-  n = n.replace(startRegex, '')
-  // Αφαίρεσε brand από τέλος — με ή χωρίς κενό
-  const endRegex = new RegExp(`\\s*${brand}$`, 'i')
-  n = n.replace(endRegex, '')
-  // Αφαίρεσε brand κολλημένο στο τέλος μετά από αριθμό/γράμμα
-  const stickyRegex = new RegExp(`${brand}$`, 'i')
-  n = n.replace(stickyRegex, '').trim()
-  return n || name
+  if (!brand || brand.length < 2) return name
+  const escaped = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(escaped, 'gi')
+  return name.replace(regex, '').replace(/\s+/g, ' ').trim() || name
 }
 
 export async function searchProducts(query) {
