@@ -13,7 +13,7 @@ function cleanName(name, brand) {
 }
 
 function normalize(s) {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() 
 }
 
 export async function searchProducts(query, page = 1) {
