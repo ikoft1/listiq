@@ -7,11 +7,13 @@ export async function searchProducts(query) {
     const data = await res.json()
     return (data.products || []).map(p => {
       const brand = p.brand || ''
-     let name = p.name
+    let name = p.name
 if (brand) {
-  // Αφαίρεσε brand από αρχή και τέλος
-  if (name.startsWith(brand)) name = name.slice(brand.length).trim()
-  if (name.endsWith(brand)) name = name.slice(0, -brand.length).trim()
+  // Αφαίρεσε brand από αρχή (με ή χωρίς κενό)
+  const startRegex = new RegExp(`^${brand}\\s*`, 'i')
+  // Αφαίρεσε brand από τέλος (με ή χωρίς κενό)
+  const endRegex = new RegExp(`\\s*${brand}$`, 'i')
+  name = name.replace(startRegex, '').replace(endRegex, '').trim()
 }
       return {
         id: p.id,
