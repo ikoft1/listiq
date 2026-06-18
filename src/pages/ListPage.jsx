@@ -15,16 +15,22 @@ export default function ListPage() {
   const [scanning, setScanning] = useState(false)
   const [searching, setSearching] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [hasNext, setHasNext] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   async function handleSearch(e) {
     e.preventDefault()
     if (!query.trim()) return
     setSearching(true)
     setResults([])
+    setCurrentPage(1)
+    setHasNext(false)
     try {
-      const found = await searchProducts(query)
-      if (found && found.length > 0) {
-        setResults(found.slice(0, 8))
+      const { products, hasNext: next } = await searchProducts(query, 1)
+      if (products && products.length > 0) {
+        setResults(products)
+        setHasNext(next)
       } else {
         addItem({ name: query })
         setQuery('')
@@ -34,6 +40,18 @@ export default function ListPage() {
       setQuery('')
     }
     setSearching(false)
+  }
+
+  async function loadMore() {
+    setLoadingMore(true)
+    const nextPage = currentPage + 1
+    try {
+      const { products, hasNext: next } = await searchProducts(query, nextPage)
+      setResults(prev => [...prev, ...products])
+      setCurrentPage(nextPage)
+      setHasNext(next)
+    } catch {}
+    setLoadingMore(false)
   }
 
   function handleAddResult(product) {
@@ -86,7 +104,6 @@ export default function ListPage() {
             className="btn-scan"
             onClick={() => setShelfScanning(true)}
             aria-label="Scan shelf label"
-            title="Σκανάρισμα ετικέτας ραφιού"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="7" width="18" height="10" rx="2"/>
@@ -98,7 +115,6 @@ export default function ListPage() {
             className="btn-scan"
             onClick={() => setScanning(true)}
             aria-label="Scan barcode"
-            title="Σκανάρισμα barcode"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
@@ -118,6 +134,11 @@ export default function ListPage() {
                 {r.price && <span className="result-price">από €{r.price?.toFixed(2)}</span>}
               </button>
             ))}
+            {hasNext && (
+              <button className="result-row result-loadmore" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? '...' : '↓ Περισσότερα αποτελέσματα'}
+              </button>
+            )}
             <button className="result-row result-manual" onClick={handleAddManual}>
               + Προσθήκη "{query}" χωρίς τιμή
             </button>
