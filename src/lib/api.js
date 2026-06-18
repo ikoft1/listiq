@@ -1,5 +1,20 @@
 const WORKER = 'https://listiq-api.ikoft3.workers.dev'
 
+function cleanName(name, brand) {
+  if (!brand) return name
+  let n = name
+  // Αφαίρεσε brand από αρχή
+  const startRegex = new RegExp(`^${brand}\\s*`, 'i')
+  n = n.replace(startRegex, '')
+  // Αφαίρεσε brand από τέλος — με ή χωρίς κενό
+  const endRegex = new RegExp(`\\s*${brand}$`, 'i')
+  n = n.replace(endRegex, '')
+  // Αφαίρεσε brand κολλημένο στο τέλος μετά από αριθμό/γράμμα
+  const stickyRegex = new RegExp(`${brand}$`, 'i')
+  n = n.replace(stickyRegex, '').trim()
+  return n || name
+}
+
 export async function searchProducts(query) {
   try {
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}`)
@@ -7,14 +22,7 @@ export async function searchProducts(query) {
     const data = await res.json()
     return (data.products || []).map(p => {
       const brand = p.brand || ''
-    let name = p.name
-if (brand) {
-  // Αφαίρεσε brand από αρχή (με ή χωρίς κενό)
-  const startRegex = new RegExp(`^${brand}\\s*`, 'i')
-  // Αφαίρεσε brand από τέλος (με ή χωρίς κενό)
-  const endRegex = new RegExp(`\\s*${brand}$`, 'i')
-  name = name.replace(startRegex, '').replace(endRegex, '').trim()
-}
+      const name = cleanName(p.name, brand)
       return {
         id: p.id,
         name,
@@ -39,9 +47,7 @@ export async function searchByBarcode(barcode) {
     const p = (data.products || [])[0]
     if (!p) return null
     const brand = p.brand || ''
-    const name = brand && p.name.startsWith(brand)
-      ? p.name.slice(brand.length).trim()
-      : p.name
+    const name = cleanName(p.name, brand)
     return {
       id: p.id,
       name,
