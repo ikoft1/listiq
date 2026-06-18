@@ -18,7 +18,7 @@ export async function searchProducts(query) {
   } catch {
     return []
   }
-}
+} 
 
 export async function searchByBarcode(barcode) {
   try {
