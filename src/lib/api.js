@@ -5,20 +5,26 @@ export async function searchProducts(query) {
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}`)
     if (!res.ok) return []
     const data = await res.json()
-    return (data.products || []).map(p => ({
-      id: p.id,
-      name: p.name,
-      brand: p.brand,
-      price: p.price_stats?.min_price || null,
-      image: p.image_url || null,
-      unit: p.unit,
-      unit_quantity: p.unit_quantity,
-      retailer_prices: p.retailer_prices || [],
-    }))
+    return (data.products || []).map(p => {
+      const brand = p.brand || ''
+      const name = brand && p.name.startsWith(brand)
+        ? p.name.slice(brand.length).trim()
+        : p.name
+      return {
+        id: p.id,
+        name,
+        brand,
+        price: p.price_stats?.min_price || null,
+        image: p.image_url || null,
+        unit: p.unit,
+        unit_quantity: p.unit_quantity,
+        retailer_prices: p.retailer_prices || [],
+      }
+    })
   } catch {
     return []
   }
-} 
+}
 
 export async function searchByBarcode(barcode) {
   try {
@@ -27,10 +33,14 @@ export async function searchByBarcode(barcode) {
     const data = await res.json()
     const p = (data.products || [])[0]
     if (!p) return null
+    const brand = p.brand || ''
+    const name = brand && p.name.startsWith(brand)
+      ? p.name.slice(brand.length).trim()
+      : p.name
     return {
       id: p.id,
-      name: p.name,
-      brand: p.brand,
+      name,
+      brand,
       price: p.price_stats?.min_price || null,
       image: p.image_url || null,
       retailer_prices: p.retailer_prices || [],
