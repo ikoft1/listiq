@@ -18,13 +18,18 @@ export default function ListPage() {
     e.preventDefault()
     if (!query.trim()) return
     setSearching(true)
-    const found = await searchProducts(query)
-    if (found.length > 0) {
-      setResults(found.slice(0, 5))
-    } else {
+    setResults([])
+    try {
+      const found = await searchProducts(query)
+      if (found && found.length > 0) {
+        setResults(found.slice(0, 8))
+      } else {
+        addItem({ name: query })
+        setQuery('')
+      }
+    } catch {
       addItem({ name: query })
       setQuery('')
-      setResults([])
     }
     setSearching(false)
   }
@@ -104,8 +109,11 @@ export default function ListPage() {
           <div className="search-results">
             {results.map(r => (
               <button key={r.id} className="result-row" onClick={() => handleAddResult(r)}>
-                <span className="result-name">{r.name}</span>
-                {r.price && <span className="result-price">€{r.price?.toFixed(2)}</span>}
+                <div className="result-info">
+                  <span className="result-name">{r.name}</span>
+                  {r.brand && <span className="result-brand">{r.brand}</span>}
+                </div>
+                {r.price && <span className="result-price">από €{r.price?.toFixed(2)}</span>}
               </button>
             ))}
             <button className="result-row result-manual" onClick={handleAddManual}>
