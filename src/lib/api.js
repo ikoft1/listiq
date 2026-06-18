@@ -1,9 +1,28 @@
 const WORKER = 'https://listiq-api.ikoft3.workers.dev'
 
-const EXCLUDE_CATEGORIES = [
-  'fb7311d1172f411dba075194a4120689', // Πίτες και Πιτάκια
-  'b2a17c2ad4235ea8574d602763940878', // Έτοιμα προϊόντα ζύμης
+const CATEGORY_MAP = [
+  ['φετ', '5f277dd598114bc2902432b1045806df'],
+  ['γαλ', 'b2a17c2ad4235ea8574d6027636cb739'],
+  ['γραβιερ', '18082a808952446192226936b3f6e6c0'],
+  ['κασερ', 'e6d74d0fbca34796839a7c41ab5ac85f'],
+  ['γιαουρτ', 'b2a17c2ad4235ea8574d6027636cf9c5'],
+  ['τυρ', 'b2a17c2ad4235ea8574d6027636cf85d'],
+  ['μπυρ', 'b2a17c2ad4235ea8574d602763965cf7'],
+  ['κρασ', 'b2a17c2ad4235ea8574d60276395d5d4'],
+  // προσθεσε οσα θες
 ]
+
+function normalize(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function getExactCategoryId(query) {
+  const q = normalize(query)
+  for (const [kw, id] of CATEGORY_MAP) {
+    if (q.includes(normalize(kw))) return id
+  }
+  return null
+}
 
 function cleanName(name, brand) {
   if (!brand || brand.length < 2) return name
@@ -12,22 +31,22 @@ function cleanName(name, brand) {
   return name.replace(regex, '').replace(/\s+/g, ' ').trim() || name
 }
 
-function normalize(s) {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() 
-}
-
 export async function searchProducts(query, page = 1) {
   try {
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
 
+    const exactCategoryId = getExactCategoryId(query)
+
     const products = (data.products || [])
       .filter(p => {
-        // Εξαίρεσε πίτες/έτοιμα ζύμης
-        if (p.category_ids?.some(id => EXCLUDE_CATEGORIES.includes(id))) return false
-        // Κράτα μόνο αυτά που έχουν το query στο όνομα
-        return normalize(p.name).includes(normalize(query))
+        if (exactCategoryId) {
+          // Φίλτρο: το product πρέπει να έχει ΑΚΡΙΒΩΣ αυτό το category ID
+          return p.category_ids?.includes(exactCategoryId)
+        }
+        // Free text: κανένα φίλτρο
+        return true
       })
       .map(p => {
         const brand = p.brand?.trim() || ''
