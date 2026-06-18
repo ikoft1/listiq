@@ -7,27 +7,35 @@ function cleanName(name, brand) {
   return name.replace(regex, '').replace(/\s+/g, ' ').trim() || name
 }
 
-export async function searchProducts(query) {
+export async function searchProducts(query, page = 1) {
   try {
-    const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}`)
-    if (!res.ok) return []
+    const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}&page=${page}`)
+    if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
-    return (data.products || []).map(p => {
-      const brand = p.brand || ''
-      const name = cleanName(p.name, brand)
-      return {
-        id: p.id,
-        name,
-        brand,
-        price: p.price_stats?.min_price || null,
-        image: p.image_url || null,
-        unit: p.unit,
-        unit_quantity: p.unit_quantity,
-        retailer_prices: p.retailer_prices || [],
-      }
-    })
+    const q = query.toLowerCase()
+    const products = (data.products || [])
+      .filter(p => p.name.toLowerCase().includes(q))
+      .map(p => {
+        const brand = p.brand?.trim() || ''
+        const name = cleanName(p.name, brand)
+        return {
+          id: p.id,
+          name,
+          brand,
+          price: p.price_stats?.min_price || null,
+          image: p.image_url || null,
+          unit: p.unit,
+          unit_quantity: p.unit_quantity,
+          retailer_prices: p.retailer_prices || [],
+        }
+      })
+    return {
+      products,
+      hasNext: data.has_next || false,
+      page: data.page || 1,
+    }
   } catch {
-    return []
+    return { products: [], hasNext: false }
   }
 }
 
@@ -38,7 +46,7 @@ export async function searchByBarcode(barcode) {
     const data = await res.json()
     const p = (data.products || [])[0]
     if (!p) return null
-    const brand = p.brand || ''
+    const brand = p.brand?.trim() || ''
     const name = cleanName(p.name, brand)
     return {
       id: p.id,
