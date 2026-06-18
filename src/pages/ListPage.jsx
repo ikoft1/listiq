@@ -4,6 +4,7 @@ import { searchProducts } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
+import PriceModal from '../components/PriceModal'
 import './ListPage.css'
 
 export default function ListPage() {
@@ -13,6 +14,7 @@ export default function ListPage() {
   const [results, setResults] = useState([])
   const [scanning, setScanning] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
 
   async function handleSearch(e) {
     e.preventDefault()
@@ -38,6 +40,7 @@ export default function ListPage() {
     addItem(product)
     setResults([])
     setQuery('')
+    setSelectedProduct(null)
   }
 
   function handleAddManual() {
@@ -108,10 +111,9 @@ export default function ListPage() {
         {results.length > 0 && (
           <div className="search-results">
             {results.map(r => (
-              <button key={r.id} className="result-row" onClick={() => handleAddResult(r)}>
+              <button key={r.id} className="result-row" onClick={() => setSelectedProduct(r)}>
                 <div className="result-info">
-                  <span className="result-name">{r.name}</span>
-                  {r.brand && <span className="result-brand">{r.brand}</span>}
+                  <span className="result-name">{r.brand} {r.name}</span>
                 </div>
                 {r.price && <span className="result-price">από €{r.price?.toFixed(2)}</span>}
               </button>
@@ -162,6 +164,14 @@ export default function ListPage() {
         <ShelfScanner
           onResult={product => { addItem(product); setShelfScanning(false) }}
           onClose={() => setShelfScanning(false)}
+        />
+      )}
+
+      {selectedProduct && (
+        <PriceModal
+          product={selectedProduct}
+          onAdd={handleAddResult}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
     </div>
