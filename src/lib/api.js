@@ -1,5 +1,10 @@
 const WORKER = 'https://listiq-api.ikoft3.workers.dev'
 
+const EXCLUDE_CATEGORIES = [
+  'fb7311d1172f411dba075194a4120689', // Πίτες και Πιτάκια
+  'b2a17c2ad4235ea8574d602763940878', // Έτοιμα προϊόντα ζύμης
+]
+
 function cleanName(name, brand) {
   if (!brand || brand.length < 2) return name
   const escaped = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -7,17 +12,23 @@ function cleanName(name, brand) {
   return name.replace(regex, '').replace(/\s+/g, ' ').trim() || name
 }
 
+function normalize(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 export async function searchProducts(query, page = 1) {
   try {
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
-    const q = query.toLowerCase()
+
     const products = (data.products || [])
       .filter(p => {
-  const normalize = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  return normalize(p.name).includes(normalize(query))
-})
+        // Εξαίρεσε πίτες/έτοιμα ζύμης
+        if (p.category_ids?.some(id => EXCLUDE_CATEGORIES.includes(id))) return false
+        // Κράτα μόνο αυτά που έχουν το query στο όνομα
+        return normalize(p.name).includes(normalize(query))
+      })
       .map(p => {
         const brand = p.brand?.trim() || ''
         const name = cleanName(p.name, brand)
@@ -32,6 +43,7 @@ export async function searchProducts(query, page = 1) {
           retailer_prices: p.retailer_prices || [],
         }
       })
+
     return {
       products,
       hasNext: data.has_next || false,
