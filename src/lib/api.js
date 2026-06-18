@@ -7,9 +7,12 @@ export async function searchProducts(query) {
     const data = await res.json()
     return (data.products || []).map(p => {
       const brand = p.brand || ''
-      const name = brand && p.name.startsWith(brand)
-        ? p.name.slice(brand.length).trim()
-        : p.name
+     let name = p.name
+if (brand) {
+  // Αφαίρεσε brand από αρχή και τέλος
+  if (name.startsWith(brand)) name = name.slice(brand.length).trim()
+  if (name.endsWith(brand)) name = name.slice(0, -brand.length).trim()
+}
       return {
         id: p.id,
         name,
