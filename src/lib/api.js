@@ -169,7 +169,7 @@ export async function findBestStores(items) {
 
       if (item.product_id) {
         // Ψάξε με product_id απευθείας
-        const res = await fetch(`${WORKER}/barcode/${item.product_id}`)
+        const res = await fetch(`${WORKER}/product/${item.product_id}`)
         if (res.ok) {
           const data = await res.json()
           const p = (data.products || [])[0]
