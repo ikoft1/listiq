@@ -19,21 +19,33 @@ const CATEGORY_MAP = [
   ['νερ', 'b2a17c2ad4235ea8574d60276397e910'],
   ['χαρτ', 'b2a17c2ad4235ea8574d6027639e561f'],
 ]
- 
+
 function normalize(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
 function parseQuery(query) {
   const q = normalize(query)
+  const words = q.split(' ')
+
+  let categoryId = null
+  let categoryWord = null
+
   for (const [kw, id] of CATEGORY_MAP) {
     const normKw = normalize(kw)
-    if (q.includes(normKw)) {
-      const brandQuery = q.replace(normKw, '').trim()
-      return { categoryId: id, brandQuery }
+    const match = words.find(w => w.startsWith(normKw))
+    if (match) {
+      categoryId = id
+      categoryWord = match
+      break
     }
   }
-  return { categoryId: null, brandQuery: null }
+
+  const brandQuery = categoryId
+    ? words.filter(w => w !== categoryWord).join(' ').trim()
+    : null
+
+  return { categoryId, brandQuery }
 }
 
 function cleanName(name, brand) {
@@ -46,6 +58,7 @@ function cleanName(name, brand) {
 export async function searchProducts(query, page = 1) {
   try {
     const { categoryId, brandQuery } = parseQuery(query)
+    // Αν έχει brand, στείλε το brand στον Worker, αλλιώς το normalize query
     const searchQuery = brandQuery && brandQuery.length > 2 ? brandQuery : normalize(query)
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
@@ -53,10 +66,13 @@ export async function searchProducts(query, page = 1) {
 
     const products = (data.products || [])
       .filter(p => {
+        // Φίλτρο category
         if (categoryId && !p.category_ids?.includes(categoryId)) return false
+        // Φίλτρο brand — ψάχνει και ελληνικά και λατινικά
         if (brandQuery && brandQuery.length > 2) {
-          return normalize(p.brand || '').includes(brandQuery) ||
-                 normalize(p.name || '').includes(brandQuery)
+          const brandNorm = normalize(p.brand || '')
+          const nameNorm = normalize(p.name || '')
+          return brandNorm.includes(brandQuery) || nameNorm.includes(brandQuery)
         }
         return true
       })
