@@ -74,6 +74,7 @@ export default function ListPage() {
   }
 
  function handleAddResult(product) {
+  console.log('product', product)
   addItem({
     ...product,
     name: `${product.brand} ${product.name}`.trim(),
