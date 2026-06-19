@@ -47,7 +47,9 @@ function cleanName(name, brand) {
 
 export async function searchProducts(query, page = 1) {
   try {
-    const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(query)}&page=${page}`)
+    const { categoryId, brandQuery } = parseQuery(query)
+const searchQuery = brandQuery && brandQuery.length > 1 ? brandQuery : query
+const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
 
