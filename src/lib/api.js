@@ -189,7 +189,7 @@ export async function findBestStores(items) {
   }
 
   const allItems = items.map(i => i.name)
-  const minItems = Math.ceil(items.length * 0.5)
+  const minItems = Math.ceil(items.length * 0.3)
 
   return Object.values(stores)
     .filter(s => s.found >= minItems)
