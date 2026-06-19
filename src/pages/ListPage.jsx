@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useList } from '../hooks/useList'
-import { searchProducts, getBestStore } from '../lib/api'
+import { searchProducts, findBestStores } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
 import PriceModal from '../components/PriceModal'
+import StoreRankingModal from '../components/StoreRankingModal'
 import './ListPage.css'
 
 export default function ListPage() {
@@ -19,6 +20,8 @@ export default function ListPage() {
   const [hasNext, setHasNext] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [noResults, setNoResults] = useState(false)
+  const [storeRanking, setStoreRanking] = useState(null)
+  const [findingStores, setFindingStores] = useState(false)
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -49,6 +52,14 @@ export default function ListPage() {
     }, 500)
     return () => clearTimeout(debounceRef.current)
   }, [query])
+
+  async function handleFindBestStores() {
+    setFindingStores(true)
+    const activeItems = items.filter(i => !i.checked)
+    const stores = await findBestStores(activeItems)
+    setStoreRanking(stores)
+    setFindingStores(false)
+  }
 
   async function loadMore() {
     setLoadingMore(true)
@@ -85,7 +96,6 @@ export default function ListPage() {
 
   const unchecked = items.filter(i => !i.checked)
   const checked = items.filter(i => i.checked)
-  const bestStore = getBestStore(unchecked)
 
   return (
     <div className="list-page">
@@ -169,19 +179,6 @@ export default function ListPage() {
       </header>
 
       <main className="list-main">
-        {bestStore && (
-          <div className="best-store-banner">
-            <div className="best-store-left">
-              <span className="best-store-label">🛒 Καλύτερο κατάστημα</span>
-              <span className="best-store-name">{bestStore.name}</span>
-            </div>
-            <div className="best-store-right">
-              <span className="best-store-total">€{bestStore.total.toFixed(2)}</span>
-              <span className="best-store-count">{bestStore.count}/{unchecked.filter(i => i.retailer_prices?.length).length} προϊόντα</span>
-            </div>
-          </div>
-        )}
-
         {items.length === 0 && (
           <div className="empty-state">
             <p>Η λίστα σου είναι άδεια</p>
@@ -192,6 +189,16 @@ export default function ListPage() {
         {unchecked.map(item => (
           <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
         ))}
+
+        {unchecked.length >= 2 && (
+          <button
+            className="btn-find-stores"
+            onClick={handleFindBestStores}
+            disabled={findingStores}
+          >
+            {findingStores ? '⏳ Ψάχνω τιμές...' : '🛒 Βρες καλύτερο SM'}
+          </button>
+        )}
 
         {checked.length > 0 && (
           <>
@@ -228,6 +235,14 @@ export default function ListPage() {
           product={selectedProduct}
           onAdd={handleAddResult}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {storeRanking && (
+        <StoreRankingModal
+          stores={storeRanking}
+          totalItems={unchecked.length}
+          onClose={() => setStoreRanking(null)}
         />
       )}
     </div>
