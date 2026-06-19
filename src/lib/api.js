@@ -20,8 +20,27 @@ const CATEGORY_MAP = [
   ['χαρτ', 'b2a17c2ad4235ea8574d6027639e561f'],
 ]
 
+const BRAND_MAP = {
+  'μελισσα': 'melissa',
+  'μισκο': 'misko',
+  'μπαριλα': 'barilla',
+  'στελα': 'stella',
+  'δελτα': 'delta',
+  'ολυμποσ': 'olympos',
+  'δωδωνη': 'dodoni',
+  'μακβελ': 'makbel',
+  'χρυση ζυμη': 'chrysi zymi',
+  'αλτισ': 'altis',
+  'ελαισ': 'elais',
+}
+
 function normalize(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function translateBrand(brand) {
+  const norm = normalize(brand)
+  return BRAND_MAP[norm] || norm
 }
 
 function parseQuery(query) {
@@ -58,8 +77,10 @@ function cleanName(name, brand) {
 export async function searchProducts(query, page = 1) {
   try {
     const { categoryId, brandQuery } = parseQuery(query)
-    // Αν έχει brand στείλε το brand, αλλιώς στείλε ολόκληρο το query
-    const searchQuery = brandQuery && brandQuery.length > 2 ? brandQuery : normalize(query)
+    const translatedBrand = brandQuery && brandQuery.length > 2
+      ? translateBrand(brandQuery)
+      : null
+    const searchQuery = translatedBrand || normalize(query)
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
