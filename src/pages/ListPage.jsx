@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useList } from '../hooks/useList'
 import { searchProducts } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
@@ -19,28 +19,36 @@ export default function ListPage() {
   const [hasNext, setHasNext] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [noResults, setNoResults] = useState(false)
+  const debounceRef = useRef(null)
 
-  async function handleSearch(e) {
-    e.preventDefault()
-    if (!query.trim()) return
-    setSearching(true)
-    setResults([])
-    setNoResults(false)
-    setCurrentPage(1)
-    setHasNext(false)
-    try {
-      const { products, hasNext: next } = await searchProducts(query, 1)
-      if (products && products.length > 0) {
-        setResults(products)
-        setHasNext(next)
-      } else {
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!query.trim() || query.trim().length < 3) {
+      setResults([])
+      setNoResults(false)
+      return
+    }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true)
+      setResults([])
+      setNoResults(false)
+      setCurrentPage(1)
+      setHasNext(false)
+      try {
+        const { products, hasNext: next } = await searchProducts(query, 1)
+        if (products && products.length > 0) {
+          setResults(products)
+          setHasNext(next)
+        } else {
+          setNoResults(true)
+        }
+      } catch {
         setNoResults(true)
       }
-    } catch {
-      setNoResults(true)
-    }
-    setSearching(false)
-  }
+      setSearching(false)
+    }, 500)
+    return () => clearTimeout(debounceRef.current)
+  }, [query])
 
   async function loadMore() {
     setLoadingMore(true)
@@ -90,7 +98,7 @@ export default function ListPage() {
           )}
         </div>
 
-        <form className="search-form" onSubmit={handleSearch}>
+        <form className="search-form" onSubmit={e => { e.preventDefault(); handleAddManual() }}>
           <input
             className="search-input"
             value={query}
