@@ -46,7 +46,7 @@ function cleanName(name, brand) {
 export async function searchProducts(query, page = 1) {
   try {
     const { categoryId, brandQuery } = parseQuery(query)
-    const searchQuery = brandQuery && brandQuery.length > 1 ? brandQuery : query
+    const searchQuery = brandQuery && brandQuery.length > 2 ? brandQuery : query
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
@@ -54,7 +54,7 @@ export async function searchProducts(query, page = 1) {
     const products = (data.products || [])
       .filter(p => {
         if (categoryId && !p.category_ids?.includes(categoryId)) return false
-        if (brandQuery && brandQuery.length > 1) {
+        if (brandQuery && brandQuery.length > 2) {
           return normalize(p.brand || '').includes(brandQuery) ||
                  normalize(p.name || '').includes(brandQuery)
         }
