@@ -64,6 +64,7 @@ export function useList() {
         price: i.price,
         store: i.store,
         barcode: i.barcode,
+        product_id: i.product_id || null,
         retailer_prices: i.retailer_prices || [],
       })))
     }
@@ -78,6 +79,7 @@ export function useList() {
       price: product.price || null,
       store: product.store || null,
       barcode: product.barcode || null,
+      product_id: product.id || null,
       retailer_prices: product.retailer_prices || [],
     }
     setItems(prev => [item, ...prev])
