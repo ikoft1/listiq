@@ -175,19 +175,30 @@ export async function findBestStores(items) {
             name: rp.retailer_display_name,
             total: 0,
             found: 0,
+            items: [],
           }
         }
         stores[rp.retailer].total += rp.price
         stores[rp.retailer].found += 1
+        stores[rp.retailer].items.push({
+          name: item.name,
+          price: rp.price,
+        })
       }
     } catch {}
   }
 
+  const allItems = items.map(i => i.name)
   const minItems = Math.ceil(items.length * 0.5)
- return Object.values(stores)
-  .filter(s => s.found >= minItems)
-  .sort((a, b) => {
-    if (b.found !== a.found) return b.found - a.found
-    return a.total - b.total
-  })
-   }
+
+  return Object.values(stores)
+    .filter(s => s.found >= minItems)
+    .sort((a, b) => {
+      if (b.found !== a.found) return b.found - a.found
+      return a.total - b.total
+    })
+    .map(s => ({
+      ...s,
+      missing: allItems.filter(name => !s.items.find(i => i.name === name)),
+    }))
+}
