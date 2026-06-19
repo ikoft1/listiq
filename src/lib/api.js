@@ -58,7 +58,7 @@ function cleanName(name, brand) {
 export async function searchProducts(query, page = 1) {
   try {
     const { categoryId, brandQuery } = parseQuery(query)
-    // Αν έχει brand, στείλε το brand στον Worker, αλλιώς το normalize query
+    // Αν έχει brand στείλε το brand, αλλιώς στείλε ολόκληρο το query
     const searchQuery = brandQuery && brandQuery.length > 2 ? brandQuery : normalize(query)
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
@@ -66,14 +66,7 @@ export async function searchProducts(query, page = 1) {
 
     const products = (data.products || [])
       .filter(p => {
-        // Φίλτρο category
         if (categoryId && !p.category_ids?.includes(categoryId)) return false
-        // Φίλτρο brand — ψάχνει και ελληνικά και λατινικά
-        if (brandQuery && brandQuery.length > 2) {
-          const brandNorm = normalize(p.brand || '')
-          const nameNorm = normalize(p.name || '')
-          return brandNorm.includes(brandQuery) || nameNorm.includes(brandQuery)
-        }
         return true
       })
       .map(p => {
