@@ -24,13 +24,11 @@ function normalize(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
-// Βρες το category keyword και επέστρεψε {categoryId, brandQuery}
 function parseQuery(query) {
   const q = normalize(query)
   for (const [kw, id] of CATEGORY_MAP) {
     const normKw = normalize(kw)
     if (q.includes(normKw)) {
-      // Ό,τι περισσεύει μετά το keyword = brand
       const brandQuery = q.replace(normKw, '').trim()
       return { categoryId: id, brandQuery }
     }
@@ -48,18 +46,14 @@ function cleanName(name, brand) {
 export async function searchProducts(query, page = 1) {
   try {
     const { categoryId, brandQuery } = parseQuery(query)
-const searchQuery = brandQuery && brandQuery.length > 1 ? brandQuery : query
-const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
+    const searchQuery = brandQuery && brandQuery.length > 1 ? brandQuery : query
+    const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
 
-    const { categoryId, brandQuery } = parseQuery(query)
-
     const products = (data.products || [])
       .filter(p => {
-        // Φίλτρο category
         if (categoryId && !p.category_ids?.includes(categoryId)) return false
-        // Φίλτρο brand (αν υπάρχει)
         if (brandQuery && brandQuery.length > 1) {
           return normalize(p.brand || '').includes(brandQuery) ||
                  normalize(p.name || '').includes(brandQuery)
