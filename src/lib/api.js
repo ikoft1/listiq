@@ -19,7 +19,7 @@ const CATEGORY_MAP = [
   ['νερ', 'b2a17c2ad4235ea8574d60276397e910'],
   ['χαρτ', 'b2a17c2ad4235ea8574d6027639e561f'],
 ]
-
+ 
 function normalize(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
