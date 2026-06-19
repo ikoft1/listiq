@@ -184,7 +184,9 @@ export async function findBestStores(items) {
   }
 
   const minItems = Math.ceil(items.length * 0.5)
-  return Object.values(stores)
-    .filter(s => s.found >= minItems)
-    .sort((a, b) => a.total - b.total)
-}
+ return Object.values(stores)
+  .filter(s => s.found >= minItems)
+  .sort((a, b) => {
+    if (b.found !== a.found) return b.found - a.found
+    return a.total - b.total
+  })
