@@ -21,10 +21,15 @@ function getCommonItems(stores) {
   )
 }
 
-export default function StoreRankingModal({ stores, totalItems, onClose }) {
+export default function StoreRankingModal({ stores, totalItems, allListItems, onClose, onStartShopping }) {
   if (!stores) return null
 
   const commonItems = getCommonItems(stores)
+
+  function handleStartShopping(store) {
+    onStartShopping(store)
+    onClose()
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -89,6 +94,14 @@ export default function StoreRankingModal({ stores, totalItems, onClose }) {
                       </div>
                     ))}
                   </div>
+
+                  {/* Κουμπί "Πάμε για ψώνια" */}
+                  <button
+                    className={`btn-start-shopping ${i === 0 ? 'btn-start-shopping--best' : ''}`}
+                    onClick={() => handleStartShopping(s)}
+                  >
+                    🛍️ Πάμε για ψώνια στο {s.name}
+                  </button>
                 </div>
               )
             })}
