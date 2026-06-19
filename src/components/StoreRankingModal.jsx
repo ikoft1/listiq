@@ -15,7 +15,6 @@ const STORE_COLORS = {
 
 function getCommonItems(stores) {
   if (!stores.length) return []
-  // Βρες τα προϊόντα που υπάρχουν σε ΟΛΑ τα SM
   const allItemNames = stores[0].items.map(i => i.name)
   return allItemNames.filter(name =>
     stores.every(s => s.items.find(i => i.name === name))
@@ -45,7 +44,6 @@ export default function StoreRankingModal({ stores, totalItems, onClose }) {
         ) : (
           <div className="ranking-stores">
             {stores.map((s, i) => {
-              // Υπολόγισε τιμή για τα κοινά προϊόντα
               const commonTotal = commonItems.length > 0
                 ? commonItems.reduce((sum, name) => {
                     const item = s.items.find(i => i.name === name)
@@ -65,7 +63,7 @@ export default function StoreRankingModal({ stores, totalItems, onClose }) {
                     <div className="store-right">
                       <div className="store-prices-row">
                         <span className="store-price">€{s.total.toFixed(2)}</span>
-                        {commonTotal !== null && commonItems.length > 0 && (
+                        {commonTotal !== null && commonItems.length > 0 && commonItems.length < totalItems && (
                           <span className="store-common-price">
                             κοινά: €{commonTotal.toFixed(2)}
                           </span>
