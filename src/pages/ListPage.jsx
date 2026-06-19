@@ -6,6 +6,7 @@ import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
 import PriceModal from '../components/PriceModal'
 import StoreRankingModal from '../components/StoreRankingModal'
+import ShoppingCartPage from './ShoppingCartPage'
 import './ListPage.css'
 
 export default function ListPage() {
@@ -22,6 +23,10 @@ export default function ListPage() {
   const [noResults, setNoResults] = useState(false)
   const [storeRanking, setStoreRanking] = useState(null)
   const [findingStores, setFindingStores] = useState(false)
+
+  // Shopping cart state
+  const [shoppingCart, setShoppingCart] = useState(null) // { store, storeItems }
+
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -73,17 +78,17 @@ export default function ListPage() {
     setLoadingMore(false)
   }
 
- function handleAddResult(product) {
-  console.log('product', product)
-  addItem({
-    ...product,
-    name: `${product.brand} ${product.name}`.trim(),
-  })
-  setResults([])
-  setQuery('')
-  setSelectedProduct(null)
-  setNoResults(false)
-}
+  function handleAddResult(product) {
+    console.log('product', product)
+    addItem({
+      ...product,
+      name: `${product.brand} ${product.name}`.trim(),
+    })
+    setResults([])
+    setQuery('')
+    setSelectedProduct(null)
+    setNoResults(false)
+  }
 
   function handleAddManual() {
     if (!query.trim()) return
@@ -96,6 +101,25 @@ export default function ListPage() {
   function handleBarcode(product) {
     setScanning(false)
     if (product) addItem(product)
+  }
+
+  // Όταν ο χρήστης επιλέξει SM από το ranking → άνοιξε το cart
+  function handleStartShopping(store) {
+    const activeItems = items.filter(i => !i.checked)
+    setShoppingCart({ store, storeItems: store.items })
+    setStoreRanking(null)
+  }
+
+  // Αν είναι σε shopping mode → εμφάνισε το cart
+  if (shoppingCart) {
+    return (
+      <ShoppingCartPage
+        store={shoppingCart.store}
+        storeItems={shoppingCart.storeItems}
+        allListItems={items.filter(i => !i.checked)}
+        onClose={() => setShoppingCart(null)}
+      />
+    )
   }
 
   const unchecked = items.filter(i => !i.checked)
@@ -143,7 +167,8 @@ export default function ListPage() {
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-              <line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="8" x2="8" y2="16"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
               <line x1="16" y1="8" x2="16" y2="16"/>
             </svg>
           </button>
@@ -246,7 +271,9 @@ export default function ListPage() {
         <StoreRankingModal
           stores={storeRanking}
           totalItems={unchecked.length}
+          allListItems={unchecked}
           onClose={() => setStoreRanking(null)}
+          onStartShopping={handleStartShopping}
         />
       )}
     </div>
