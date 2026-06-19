@@ -113,3 +113,21 @@
   text-align: center;
   color: var(--text-muted);
 }
+.store-prices-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.store-common-price {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--gray-100);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ranking-best .store-common-price {
+  background: rgba(255,255,255,0.4);
+  color: var(--green-dark, #166534);
+}
