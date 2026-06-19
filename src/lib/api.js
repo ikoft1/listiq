@@ -167,18 +167,11 @@ export async function findBestStores(items) {
     try {
       let retailer_prices = []
 
-      if (item.product_id) {
-        // Ψάξε με product_id απευθείας
-        const res = await fetch(`${WORKER}/product/${item.product_id}`)
-        if (res.ok) {
-          const data = await res.json()
-          const p = (data.products || [])[0]
-          if (p) retailer_prices = p.retailer_prices || []
-        }
-      }
-
-      // Fallback: ψάξε με όνομα αν δεν βρήκε με product_id
-      if (!retailer_prices.length) {
+      // Αν έχει ήδη retailer_prices — χρησιμοποίησε τα!
+      if (item.retailer_prices?.length > 0) {
+        retailer_prices = item.retailer_prices
+      } else {
+        // Fallback: ψάξε με όνομα
         const shortName = item.name.split(' ').slice(0, 3).join(' ')
         const { products } = await searchProducts(shortName, 1)
         if (products?.length) retailer_prices = products[0].retailer_prices || []
