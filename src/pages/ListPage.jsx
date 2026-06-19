@@ -18,12 +18,14 @@ export default function ListPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [hasNext, setHasNext] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [noResults, setNoResults] = useState(false)
 
   async function handleSearch(e) {
     e.preventDefault()
     if (!query.trim()) return
     setSearching(true)
     setResults([])
+    setNoResults(false)
     setCurrentPage(1)
     setHasNext(false)
     try {
@@ -32,12 +34,10 @@ export default function ListPage() {
         setResults(products)
         setHasNext(next)
       } else {
-        addItem({ name: query })
-        setQuery('')
+        setNoResults(true)
       }
     } catch {
-      addItem({ name: query })
-      setQuery('')
+      setNoResults(true)
     }
     setSearching(false)
   }
@@ -59,6 +59,7 @@ export default function ListPage() {
     setResults([])
     setQuery('')
     setSelectedProduct(null)
+    setNoResults(false)
   }
 
   function handleAddManual() {
@@ -66,6 +67,7 @@ export default function ListPage() {
     addItem({ name: query })
     setQuery('')
     setResults([])
+    setNoResults(false)
   }
 
   function handleBarcode(product) {
@@ -92,7 +94,7 @@ export default function ListPage() {
           <input
             className="search-input"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => { setQuery(e.target.value); setNoResults(false) }}
             placeholder="Προσθήκη προϊόντος..."
             autoComplete="off"
           />
@@ -139,6 +141,17 @@ export default function ListPage() {
                 {loadingMore ? '...' : '↓ Περισσότερα αποτελέσματα'}
               </button>
             )}
+            <button className="result-row result-manual" onClick={handleAddManual}>
+              + Προσθήκη "{query}" χωρίς τιμή
+            </button>
+          </div>
+        )}
+
+        {noResults && (
+          <div className="search-results">
+            <div className="result-row" style={{ color: 'var(--text-secondary)', cursor: 'default' }}>
+              Δεν βρέθηκαν αποτελέσματα για "{query}"
+            </div>
             <button className="result-row result-manual" onClick={handleAddManual}>
               + Προσθήκη "{query}" χωρίς τιμή
             </button>
