@@ -12,13 +12,33 @@
   flex-shrink: 0;
 }
 
-.best-row .rank-number {
+.ranking-best .rank-number {
   background: var(--green);
   color: #fff;
 }
 
-.best-row {
+.ranking-stores {
+  padding: 8px 0;
+}
+
+.ranking-store {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 1.25rem;
+}
+
+.ranking-store:last-child {
+  border-bottom: none;
+}
+
+.ranking-best {
   background: var(--green-light, #f0fdf4);
+}
+
+.ranking-store-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .store-right {
@@ -26,10 +46,65 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+  margin-left: auto;
 }
 
 .store-coverage {
   font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ranking-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 32px;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ranking-item.found {
+  color: var(--text);
+}
+
+.ranking-item.missing {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.ranking-item-check {
+  font-size: 11px;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.ranking-item.found .ranking-item-check {
+  color: var(--green);
+}
+
+.ranking-item.missing .ranking-item-check {
+  color: #ef4444;
+}
+
+.ranking-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-item-price {
+  font-weight: 600;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.ranking-item.missing .ranking-item-price {
   color: var(--text-muted);
 }
 
