@@ -9,19 +9,33 @@ const CATEGORY_MAP = [
   ['τυρ', 'b2a17c2ad4235ea8574d6027636cf85d'],
   ['μπυρ', 'b2a17c2ad4235ea8574d602763965cf7'],
   ['κρασ', 'b2a17c2ad4235ea8574d60276395d5d4'],
-  // προσθεσε οσα θες
+  ['μακαρον', 'b2a17c2ad4235ea8574d6027635d7c07'],
+  ['ζυμαρ', 'b2a17c2ad4235ea8574d6027635d7c07'],
+  ['σπαγγετ', 'b2a17c2ad4235ea8574d602763764783'],
+  ['ελαιολαδ', 'b2a17c2ad4235ea8574d602763785257'],
+  ['αυγ', 'b2a17c2ad4235ea8574d6027636c6884'],
+  ['ρυζ', 'b2a17c2ad4235ea8574d602763773ab5'],
+  ['καφ', 'b2a17c2ad4235ea8574d602763685e44'],
+  ['νερ', 'b2a17c2ad4235ea8574d60276397e910'],
+  ['χαρτ', 'b2a17c2ad4235ea8574d6027639e561f'],
 ]
 
 function normalize(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
-function getExactCategoryId(query) {
+// Βρες το category keyword και επέστρεψε {categoryId, brandQuery}
+function parseQuery(query) {
   const q = normalize(query)
   for (const [kw, id] of CATEGORY_MAP) {
-    if (q.includes(normalize(kw))) return id
+    const normKw = normalize(kw)
+    if (q.includes(normKw)) {
+      // Ό,τι περισσεύει μετά το keyword = brand
+      const brandQuery = q.replace(normKw, '').trim()
+      return { categoryId: id, brandQuery }
+    }
   }
-  return null
+  return { categoryId: null, brandQuery: null }
 }
 
 function cleanName(name, brand) {
@@ -37,15 +51,17 @@ export async function searchProducts(query, page = 1) {
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
 
-    const exactCategoryId = getExactCategoryId(query)
+    const { categoryId, brandQuery } = parseQuery(query)
 
     const products = (data.products || [])
       .filter(p => {
-        if (exactCategoryId) {
-          // Φίλτρο: το product πρέπει να έχει ΑΚΡΙΒΩΣ αυτό το category ID
-          return p.category_ids?.includes(exactCategoryId)
+        // Φίλτρο category
+        if (categoryId && !p.category_ids?.includes(categoryId)) return false
+        // Φίλτρο brand (αν υπάρχει)
+        if (brandQuery && brandQuery.length > 1) {
+          return normalize(p.brand || '').includes(brandQuery) ||
+                 normalize(p.name || '').includes(brandQuery)
         }
-        // Free text: κανένα φίλτρο
         return true
       })
       .map(p => {
