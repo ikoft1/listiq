@@ -139,7 +139,6 @@ export function getCheapestStore(retailer_prices) {
 export function getBestStore(items) {
   const itemsWithPrices = items.filter(i => i.retailer_prices?.length > 0)
   if (!itemsWithPrices.length) return null
-
   const stores = {}
   for (const item of itemsWithPrices) {
     for (const rp of item.retailer_prices) {
@@ -155,10 +154,37 @@ export function getBestStore(items) {
       stores[rp.retailer].count += 1
     }
   }
-
   const minItems = Math.ceil(itemsWithPrices.length * 0.5)
   const validStores = Object.values(stores).filter(s => s.count >= minItems)
   if (!validStores.length) return null
-
   return validStores.reduce((best, s) => s.total < best.total ? s : best, validStores[0])
+}
+
+export async function findBestStores(items) {
+  const stores = {}
+
+  for (const item of items) {
+    try {
+      const { products } = await searchProducts(item.name, 1)
+      if (!products?.length) continue
+      const product = products[0]
+      for (const rp of product.retailer_prices || []) {
+        if (!stores[rp.retailer]) {
+          stores[rp.retailer] = {
+            retailer: rp.retailer,
+            name: rp.retailer_display_name,
+            total: 0,
+            found: 0,
+          }
+        }
+        stores[rp.retailer].total += rp.price
+        stores[rp.retailer].found += 1
+      }
+    } catch {}
+  }
+
+  const minItems = Math.ceil(items.length * 0.5)
+  return Object.values(stores)
+    .filter(s => s.found >= minItems)
+    .sort((a, b) => a.total - b.total)
 }
