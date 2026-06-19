@@ -14,7 +14,7 @@ const STORE_COLORS = {
 }
 
 export default function StoreRankingModal({ stores, totalItems, onClose }) {
-  if (!stores) return null
+  if (!stores) return null  
 
   return (
     <div className="modal-overlay" onClick={onClose}>
