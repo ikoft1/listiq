@@ -73,13 +73,16 @@ export default function ListPage() {
     setLoadingMore(false)
   }
 
-  function handleAddResult(product) {
-    addItem(product)
-    setResults([])
-    setQuery('')
-    setSelectedProduct(null)
-    setNoResults(false)
-  }
+ function handleAddResult(product) {
+  addItem({
+    ...product,
+    name: `${product.brand} ${product.name}`.trim(),
+  })
+  setResults([])
+  setQuery('')
+  setSelectedProduct(null)
+  setNoResults(false)
+}
 
   function handleAddManual() {
     if (!query.trim()) return
