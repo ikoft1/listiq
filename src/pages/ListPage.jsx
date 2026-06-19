@@ -148,7 +148,7 @@ export default function ListPage() {
         {results.length > 0 && (
           <div className="search-results">
             {results.map(r => (
-              <button key={r.id} className="result-row" onClick={() => setSelectedProduct(r)}>
+              <button key={r.id} className="result-row" onClick={() => handleAddResult(r)}>
                 <div className="result-info">
                   <span className="result-name">{r.brand} {r.name}</span>
                 </div>
