@@ -70,8 +70,9 @@ export function useList() {
     }
   }
 
-  async function addItem(product) {
-    const item = {
+ async function addItem(product) {
+  console.log('addItem retailer_prices', product.retailer_prices)
+  const item = {
       id: crypto.randomUUID(),
       name: product.name || product,
       quantity: 1,
