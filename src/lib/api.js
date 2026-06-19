@@ -165,7 +165,9 @@ export async function findBestStores(items) {
 
   for (const item of items) {
     try {
-      const { products } = await searchProducts(item.name, 1)
+      // Χρησιμοποίησε μόνο τις πρώτες 3 λέξεις για καλύτερο match
+const shortName = item.name.split(' ').slice(0, 3).join(' ')
+const { products } = await searchProducts(shortName, 1)
       if (!products?.length) continue
       const product = products[0]
       for (const rp of product.retailer_prices || []) {
