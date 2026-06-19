@@ -46,10 +46,8 @@ function translateBrand(brand) {
 function parseQuery(query) {
   const q = normalize(query)
   const words = q.split(' ')
-
   let categoryId = null
   let categoryWord = null
-
   for (const [kw, id] of CATEGORY_MAP) {
     const normKw = normalize(kw)
     const match = words.find(w => w.startsWith(normKw))
@@ -59,11 +57,9 @@ function parseQuery(query) {
       break
     }
   }
-
   const brandQuery = categoryId
     ? words.filter(w => w !== categoryWord).join(' ').trim()
     : null
-
   return { categoryId, brandQuery }
 }
 
@@ -84,7 +80,6 @@ export async function searchProducts(query, page = 1) {
     const res = await fetch(`${WORKER}/search?q=${encodeURIComponent(searchQuery)}&page=${page}`)
     if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
-
     const products = (data.products || [])
       .filter(p => {
         if (categoryId && !p.category_ids?.includes(categoryId)) return false
@@ -104,7 +99,6 @@ export async function searchProducts(query, page = 1) {
           retailer_prices: p.retailer_prices || [],
         }
       })
-
     return {
       products,
       hasNext: data.has_next || false,
@@ -140,4 +134,31 @@ export async function searchByBarcode(barcode) {
 export function getCheapestStore(retailer_prices) {
   if (!retailer_prices?.length) return null
   return retailer_prices.reduce((min, p) => p.price < min.price ? p : min, retailer_prices[0])
+}
+
+export function getBestStore(items) {
+  const itemsWithPrices = items.filter(i => i.retailer_prices?.length > 0)
+  if (!itemsWithPrices.length) return null
+
+  const stores = {}
+  for (const item of itemsWithPrices) {
+    for (const rp of item.retailer_prices) {
+      if (!stores[rp.retailer]) {
+        stores[rp.retailer] = {
+          retailer: rp.retailer,
+          name: rp.retailer_display_name,
+          total: 0,
+          count: 0,
+        }
+      }
+      stores[rp.retailer].total += rp.price * (item.quantity || 1)
+      stores[rp.retailer].count += 1
+    }
+  }
+
+  const minItems = Math.ceil(itemsWithPrices.length * 0.5)
+  const validStores = Object.values(stores).filter(s => s.count >= minItems)
+  if (!validStores.length) return null
+
+  return validStores.reduce((best, s) => s.total < best.total ? s : best, validStores[0])
 }
