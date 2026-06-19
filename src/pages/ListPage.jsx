@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useList } from '../hooks/useList'
-import { searchProducts } from '../lib/api'
+import { searchProducts, getBestStore } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
@@ -85,6 +85,7 @@ export default function ListPage() {
 
   const unchecked = items.filter(i => !i.checked)
   const checked = items.filter(i => i.checked)
+  const bestStore = getBestStore(unchecked)
 
   return (
     <div className="list-page">
@@ -168,6 +169,19 @@ export default function ListPage() {
       </header>
 
       <main className="list-main">
+        {bestStore && (
+          <div className="best-store-banner">
+            <div className="best-store-left">
+              <span className="best-store-label">🛒 Καλύτερο κατάστημα</span>
+              <span className="best-store-name">{bestStore.name}</span>
+            </div>
+            <div className="best-store-right">
+              <span className="best-store-total">€{bestStore.total.toFixed(2)}</span>
+              <span className="best-store-count">{bestStore.count}/{unchecked.filter(i => i.retailer_prices?.length).length} προϊόντα</span>
+            </div>
+          </div>
+        )}
+
         {items.length === 0 && (
           <div className="empty-state">
             <p>Η λίστα σου είναι άδεια</p>
