@@ -58,12 +58,13 @@ export default function PriceModal({ product, onAdd, onClose }) {
           <button
             className="btn-add-product"
             onClick={() => {
-              onAdd({
-                id: product.id,
-                name: `${product.brand} ${product.name}`.trim(),
-                price: cheapest?.price || null,
-                store: cheapest?.retailer_display_name || null,
-              })
+             onAdd({
+  id: product.id,
+  name: `${product.brand} ${product.name}`.trim(),
+  price: cheapest?.price || null,
+  store: cheapest?.retailer_display_name || null,
+  retailer_prices: product.retailer_prices || [],
+})
               onClose()
             }}
           >
