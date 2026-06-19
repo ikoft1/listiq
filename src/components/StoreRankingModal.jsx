@@ -13,8 +13,19 @@ const STORE_COLORS = {
   market_in: '#009f4d',
 }
 
+function getCommonItems(stores) {
+  if (!stores.length) return []
+  // Βρες τα προϊόντα που υπάρχουν σε ΟΛΑ τα SM
+  const allItemNames = stores[0].items.map(i => i.name)
+  return allItemNames.filter(name =>
+    stores.every(s => s.items.find(i => i.name === name))
+  )
+}
+
 export default function StoreRankingModal({ stores, totalItems, onClose }) {
   if (!stores) return null
+
+  const commonItems = getCommonItems(stores)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -33,39 +44,56 @@ export default function StoreRankingModal({ stores, totalItems, onClose }) {
           </div>
         ) : (
           <div className="ranking-stores">
-            {stores.map((s, i) => (
-              <div key={s.retailer} className={`ranking-store ${i === 0 ? 'ranking-best' : ''}`}>
-                <div className="ranking-store-header">
-                  <div className="rank-number">{i + 1}</div>
-                  <div
-                    className="store-dot"
-                    style={{ background: STORE_COLORS[s.retailer] || '#999' }}
-                  />
-                  <span className="store-name">{s.name}</span>
-                  <div className="store-right">
-                    <span className="store-price">€{s.total.toFixed(2)}</span>
-                    <span className="store-coverage">{s.found}/{totalItems} προϊ.</span>
+            {stores.map((s, i) => {
+              // Υπολόγισε τιμή για τα κοινά προϊόντα
+              const commonTotal = commonItems.length > 0
+                ? commonItems.reduce((sum, name) => {
+                    const item = s.items.find(i => i.name === name)
+                    return sum + (item?.price || 0)
+                  }, 0)
+                : null
+
+              return (
+                <div key={s.retailer} className={`ranking-store ${i === 0 ? 'ranking-best' : ''}`}>
+                  <div className="ranking-store-header">
+                    <div className="rank-number">{i + 1}</div>
+                    <div
+                      className="store-dot"
+                      style={{ background: STORE_COLORS[s.retailer] || '#999' }}
+                    />
+                    <span className="store-name">{s.name}</span>
+                    <div className="store-right">
+                      <div className="store-prices-row">
+                        <span className="store-price">€{s.total.toFixed(2)}</span>
+                        {commonTotal !== null && commonItems.length > 0 && (
+                          <span className="store-common-price">
+                            κοινά: €{commonTotal.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="store-coverage">{s.found}/{totalItems} προϊ.</span>
+                    </div>
+                  </div>
+
+                  <div className="ranking-items">
+                    {s.items.map((item, j) => (
+                      <div key={j} className="ranking-item found">
+                        <span className="ranking-item-check">✓</span>
+                        <span className="ranking-item-name">{item.name}</span>
+                        <span className="ranking-item-price">€{item.price.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {s.missing.map((name, j) => (
+                      <div key={j} className="ranking-item missing">
+                        <span className="ranking-item-check">✕</span>
+                        <span className="ranking-item-name">{name}</span>
+                        <span className="ranking-item-price">—</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <div className="ranking-items">
-                  {s.items.map((item, j) => (
-                    <div key={j} className="ranking-item found">
-                      <span className="ranking-item-check">✓</span>
-                      <span className="ranking-item-name">{item.name}</span>
-                      <span className="ranking-item-price">€{item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                  {s.missing.map((name, j) => (
-                    <div key={j} className="ranking-item missing">
-                      <span className="ranking-item-check">✕</span>
-                      <span className="ranking-item-name">{name}</span>
-                      <span className="ranking-item-price">—</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
