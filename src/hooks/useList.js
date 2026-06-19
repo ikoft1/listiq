@@ -56,23 +56,26 @@ export function useList() {
       .eq('list_id', id)
       .order('created_at', { ascending: false })
     if (dbItems?.length) {
-      setItems(dbItems.map(i => ({
-        id: i.id,
-        name: i.name,
-        quantity: i.quantity,
-        checked: i.checked,
-        price: i.price,
-        store: i.store,
-        barcode: i.barcode,
-        product_id: i.product_id || null,
-        retailer_prices: i.retailer_prices || [],
-      })))
+      const localItems = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
+      setItems(dbItems.map(i => {
+        const local = localItems.find(l => l.id === i.id)
+        return {
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity,
+          checked: i.checked,
+          price: i.price,
+          store: i.store,
+          barcode: i.barcode,
+          product_id: local?.product_id || null,
+          retailer_prices: local?.retailer_prices || [],
+        }
+      }))
     }
   }
 
- async function addItem(product) {
-  console.log('addItem retailer_prices', product.retailer_prices)
-  const item = {
+  async function addItem(product) {
+    const item = {
       id: crypto.randomUUID(),
       name: product.name || product,
       quantity: 1,
