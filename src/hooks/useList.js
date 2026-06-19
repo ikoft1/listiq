@@ -38,7 +38,6 @@ export function useList() {
       .select('id')
       .eq('user_id', user.id)
       .limit(1)
-
     let id
     if (!lists?.length) {
       const { data } = await supabase
@@ -50,15 +49,12 @@ export function useList() {
     } else {
       id = lists[0].id
     }
-
     setListId(id)
-
     const { data: dbItems } = await supabase
       .from('list_items')
       .select('*')
       .eq('list_id', id)
       .order('created_at', { ascending: false })
-
     if (dbItems?.length) {
       setItems(dbItems.map(i => ({
         id: i.id,
@@ -68,6 +64,7 @@ export function useList() {
         price: i.price,
         store: i.store,
         barcode: i.barcode,
+        retailer_prices: i.retailer_prices || [],
       })))
     }
   }
@@ -81,6 +78,7 @@ export function useList() {
       price: product.price || null,
       store: product.store || null,
       barcode: product.barcode || null,
+      retailer_prices: product.retailer_prices || [],
     }
     setItems(prev => [item, ...prev])
     if (user && listId) {
