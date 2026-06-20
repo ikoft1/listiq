@@ -11,7 +11,7 @@ import FavouritesModal from '../components/FavouritesModal'
 import './ListPage.css'
 
 export default function ListPage() {
-  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, total, checkedCount } = useList()
+  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount } = useList()
   const [query, setQuery] = useState('')
   const [shelfScanning, setShelfScanning] = useState(false)
   const [results, setResults] = useState([])
@@ -147,6 +147,7 @@ export default function ListPage() {
         storeItems={shoppingCart.storeItems}
         allListItems={items.filter(i => !i.checked)}
         onClose={() => setShoppingCart(null)}
+        onNewList={() => { clearAll(); setShoppingCart(null); }}
       />
     )
   }
