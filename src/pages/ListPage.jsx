@@ -7,6 +7,7 @@ import ListItem from '../components/ListItem'
 import PriceModal from '../components/PriceModal'
 import StoreRankingModal from '../components/StoreRankingModal'
 import ShoppingCartPage from './ShoppingCartPage'
+import FavouritesModal from '../components/FavouritesModal'
 import './ListPage.css'
 
 export default function ListPage() {
@@ -25,7 +26,8 @@ export default function ListPage() {
   const [findingStores, setFindingStores] = useState(false)
 
   // Shopping cart state
-  const [shoppingCart, setShoppingCart] = useState(null) // { store, storeItems }
+  const [shoppingCart, setShoppingCart] = useState(null)
+  const [showFavourites, setShowFavourites] = useState(false)
 
   const debounceRef = useRef(null)
 
@@ -130,6 +132,9 @@ export default function ListPage() {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
+          <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
+            ⭐
+          </button>
           {checkedCount > 0 && (
             <div className="total-badge">
               {total > 0 ? `€${total.toFixed(2)}` : `${checkedCount} ✓`}
@@ -264,6 +269,13 @@ export default function ListPage() {
           product={selectedProduct}
           onAdd={handleAddResult}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {showFavourites && (
+        <FavouritesModal
+          onAdd={products => products.forEach(p => addItem(p))}
+          onClose={() => setShowFavourites(false)}
         />
       )}
 
