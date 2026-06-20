@@ -64,3 +64,42 @@
   padding-top: 2px;
 }
 .list-item:hover .item-remove { opacity: 1; }
+
+/* ── Quantity controls ── */
+.item-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.item-qty-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  line-height: 1;
+}
+.item-qty-btn:active { background: var(--gray-100); }
+
+.item-qty-num {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 16px;
+  text-align: center;
+}
+
+.item-price-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
