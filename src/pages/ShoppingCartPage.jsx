@@ -72,6 +72,9 @@ function CheckoutModal({ estimatedTotal, shelfTotal, estimatedMissing, shelfMiss
           </div>
         </div>
 
+        <button className="checkout-btn checkout-btn--back" onClick={onContinue}>
+          ← Πίσω στο καλάθι
+        </button>
         <button
           className={`checkout-btn checkout-btn--fav ${saved ? 'checkout-btn--fav-saved' : ''}`}
           onClick={onSaveFavourites}
