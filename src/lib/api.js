@@ -97,6 +97,7 @@ export async function searchProducts(query, page = 1) {
           unit: p.unit,
           unit_quantity: p.unit_quantity,
           retailer_prices: p.retailer_prices || [],
+          category_ids: p.category_ids || [],
         }
       })
     return {
@@ -125,6 +126,7 @@ export async function searchByBarcode(barcode) {
       price: p.price_stats?.min_price || null,
       image: p.image_url || null,
       retailer_prices: p.retailer_prices || [],
+      category_ids: p.category_ids || [],
     }
   } catch {
     return null
@@ -167,17 +169,19 @@ export async function findBestStores(items) {
     try {
       let retailer_prices = []
 
-      // Αν έχει ήδη retailer_prices — χρησιμοποίησε τα!
       if (item.retailer_prices?.length > 0) {
+        // ✅ Έχει ήδη τιμές — χρησιμοποίησε τα ΑΜΕΣΩΣ, χωρίς νέο search
         retailer_prices = item.retailer_prices
-      } else {
-        // Fallback: ψάξε με όνομα
-        const shortName = item.name.split(' ').slice(0, 3).join(' ')
-        const { products } = await searchProducts(shortName, 1)
-        if (products?.length) retailer_prices = products[0].retailer_prices || []
       }
+      // ❌ Αν δεν έχει retailer_prices → δεν κάνουμε fallback search
+      // (αποφεύγουμε λάθος προϊόν π.χ. 94g αντί 194g)
+      // Εμφανίζεται ως "missing" στο ranking
 
       if (!retailer_prices.length) continue
+
+      // Πλήρες όνομα: name + unit_quantity + unit
+      const fullName = [item.name, item.unit_quantity, item.unit]
+        .filter(Boolean).join(' ')
 
       for (const rp of retailer_prices) {
         if (!stores[rp.retailer]) {
@@ -192,18 +196,20 @@ export async function findBestStores(items) {
         stores[rp.retailer].total += rp.price
         stores[rp.retailer].found += 1
         stores[rp.retailer].items.push({
-          name: item.name,
+          name: fullName,
           price: rp.price,
         })
       }
     } catch {}
   }
 
-  const allItems = items.map(i => i.name)
- const minItems = 1
+  // Πλήρη ονόματα για το missing list επίσης
+  const allItems = items.map(i =>
+    [i.name, i.unit_quantity, i.unit].filter(Boolean).join(' ')
+  )
 
   return Object.values(stores)
-    .filter(s => s.found >= minItems)
+    .filter(s => s.found >= 1)
     .sort((a, b) => {
       if (b.found !== a.found) return b.found - a.found
       return a.total - b.total
