@@ -268,9 +268,9 @@ export default function ListPage() {
           </div>
         )}
 
-      {unchecked.map(item => (
-  <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} onUpdateQuantity={(id, qty) => updateItem(id, { quantity: qty })} />
-))}
+        {unchecked.map(item => (
+          <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} onUpdateQuantity={(id, qty) => updateItem(id, { quantity: qty })} />
+        ))}
 
         {unchecked.length >= 2 && (
           <button
@@ -295,15 +295,10 @@ export default function ListPage() {
         )}
       </main>
 
-     <footer className="donate-footer">
+      <footer className="donate-footer">
         <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
-        <div className="footer-links">
-          <a href="/privacy.html" target="_blank">Πολιτική Απορρήτου</a>
-          <span>·</span>
-          <a href="/terms.html" target="_blank">Όροι Χρήσης</a>
-        </div>
       </footer>
 
       {selectedProduct && (
