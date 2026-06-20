@@ -8,6 +8,7 @@ import PriceModal from '../components/PriceModal'
 import StoreRankingModal from '../components/StoreRankingModal'
 import ShoppingCartPage from './ShoppingCartPage'
 import FavouritesModal from '../components/FavouritesModal'
+import OnboardingPage from './OnboardingPage'
 import './ListPage.css'
 
 export default function ListPage() {
@@ -30,6 +31,7 @@ export default function ListPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [refreshToast, setRefreshToast] = useState(null)
   const [showFavourites, setShowFavourites] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
 
   const debounceRef = useRef(null)
 
@@ -160,6 +162,9 @@ export default function ListPage() {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
+          <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
+            ?
+          </button>
           <button
             className="btn-refresh"
             onClick={handleRefreshPrices}
@@ -310,6 +315,14 @@ export default function ListPage() {
           onAdd={handleAddResult}
           onClose={() => setSelectedProduct(null)}
         />
+      )}
+
+      {showHelp && (
+        <div className="help-overlay" onClick={() => setShowHelp(false)}>
+          <div className="help-modal" onClick={e => e.stopPropagation()}>
+            <OnboardingPage onDone={() => setShowHelp(false)} isModal />
+          </div>
+        </div>
       )}
 
       {showFavourites && (
