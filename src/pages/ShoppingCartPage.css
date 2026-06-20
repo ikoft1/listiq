@@ -516,5 +516,14 @@
   background: #f0faf5;
   color: #1a9e5c;
   border-color: #1a9e5c;
+
+  .btn-favourites {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
   opacity: 0.8;
 }
