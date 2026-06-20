@@ -1,136 +1,5 @@
-.rank-number {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--gray-100);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+/* Πρόσθεσε αυτό στο υπάρχον StoreRankingModal.css */
 
-.ranking-best .rank-number {
-  background: var(--green);
-  color: #fff;
-}
-
-.ranking-stores {
-  padding: 8px 0;
-}
-
-.ranking-store {
-  border-bottom: 1px solid var(--border);
-  padding: 12px 1.25rem;
-}
-
-.ranking-store:last-child {
-  border-bottom: none;
-}
-
-.ranking-best {
-  background: var(--green-light, #f0fdf4);
-}
-
-.ranking-store-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.store-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  margin-left: auto;
-}
-
-.store-coverage {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.ranking-items {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 32px;
-}
-
-.ranking-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.ranking-item.found {
-  color: var(--text);
-}
-
-.ranking-item.missing {
-  color: var(--text-muted);
-  opacity: 0.6;
-}
-
-.ranking-item-check {
-  font-size: 11px;
-  width: 14px;
-  flex-shrink: 0;
-}
-
-.ranking-item.found .ranking-item-check {
-  color: var(--green);
-}
-
-.ranking-item.missing .ranking-item-check {
-  color: #ef4444;
-}
-
-.ranking-item-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ranking-item-price {
-  font-weight: 600;
-  color: var(--green);
-  flex-shrink: 0;
-}
-
-.ranking-item.missing .ranking-item-price {
-  color: var(--text-muted);
-}
-
-.ranking-empty {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-.store-prices-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.store-common-price {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--gray-100);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.ranking-best .store-common-price {
-  background: rgba(255,255,255,0.4);
-  color: var(--green-dark, #166534);
-}
 .btn-start-shopping {
   width: 100%;
   margin-top: 10px;
@@ -158,4 +27,12 @@
 
 .btn-start-shopping--best:active {
   background: #158a4f;
+}
+
+/* Πλήρη ονόματα στο ranking */
+.ranking-item-name {
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.3 !important;
+  flex: 1;
 }
