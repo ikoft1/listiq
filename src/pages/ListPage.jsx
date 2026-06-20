@@ -131,6 +131,30 @@ export default function ListPage() {
     setStoreRanking(null)
   }
 
+  function handleShare() {
+    const activeItems = items.filter(i => !i.checked)
+    if (!activeItems.length) return
+
+    const lines = activeItems.map(i => {
+      const price = i.price ? ` ~€${i.price.toFixed(2)}` : ''
+      return `• ${i.name}${price}`
+    })
+
+    const totalPrice = activeItems.filter(i => i.price).reduce((sum, i) => sum + i.price, 0)
+    const totalLine = totalPrice > 0 ? `
+Σύνολο: ~€${totalPrice.toFixed(2)}` : ''
+
+    const text = `🛒 Λίστα αγορών\n\n${lines.join('\n')}${totalLine}\n\ngolistiq.com`
+
+    if (navigator.share) {
+      navigator.share({ title: 'Λίστα αγορών - Listiq', text })
+    } else {
+      navigator.clipboard.writeText(text)
+      setRefreshToast('✅ Αντιγράφηκε στο clipboard!')
+      setTimeout(() => setRefreshToast(null), 3000)
+    }
+  }
+
   if (!onboardingDone) {
     return (
       <OnboardingPage onDone={() => {
@@ -174,6 +198,11 @@ export default function ListPage() {
           <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
             ⭐
           </button>
+          {items.filter(i => !i.checked).length > 0 && (
+            <button className="btn-share" onClick={handleShare} aria-label="Κοινοποίηση">
+              📤
+            </button>
+          )}
           {checkedCount > 0 && (
             <div className="total-badge">
               {total > 0 ? `€${total.toFixed(2)}` : `${checkedCount} ✓`}
@@ -266,16 +295,11 @@ export default function ListPage() {
         )}
       </main>
 
-     <footer className="donate-footer">
-  <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
-    ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
-  </a>
-  <div className="footer-links">
-    <a href="/privacy.html" target="_blank">Πολιτική Απορρήτου</a>
-    <span>·</span>
-    <a href="/terms.html" target="_blank">Όροι Χρήσης</a>
-  </div>
-</footer>
+      <footer className="donate-footer">
+        <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
+          ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
+        </a>
+      </footer>
 
       {selectedProduct && (
         <PriceModal
