@@ -222,18 +222,39 @@ export async function findBestStores(items) {
 
 export async function refreshItemPrices(items) {
   const updated = await Promise.all(items.map(async item => {
-    if (!item.product_id) return item
     try {
-      const res = await fetch(`${WORKER}/product/${item.product_id}`)
-      if (!res.ok) return item
-      const data = await res.json()
-      const p = (data.products || [])[0]
-      if (!p) return item
-      return {
-        ...item,
-        price: p.price_stats?.min_price || item.price,
-        retailer_prices: p.retailer_prices || item.retailer_prices,
+      if (item.product_id) {
+        // Έχει product_id → fetch απευθείας
+        const res = await fetch(`${WORKER}/product/${item.product_id}`)
+        if (!res.ok) return item
+        const data = await res.json()
+        const p = (data.products || [])[0]
+        if (!p) return item
+        return {
+          ...item,
+          price: p.price_stats?.min_price || item.price,
+          retailer_prices: p.retailer_prices || item.retailer_prices,
+          category_ids: p.category_ids || item.category_ids,
+        }
+      } else if (item.retailer_prices?.length === 0 && item.name) {
+        // Δεν έχει product_id → search με το όνομα
+        const { products } = await searchProducts(item.name, 1)
+        if (!products?.length) return item
+        // Βρες το πιο κοντινό match βάσει ονόματος
+        const match = products.find(p =>
+          normalize(`${p.brand} ${p.name}`).includes(normalize(item.name.split(' ').slice(0, 4).join(' ')))
+        ) || products[0]
+        return {
+          ...item,
+          price: match.price || item.price,
+          product_id: match.id || null,
+          retailer_prices: match.retailer_prices || [],
+          category_ids: match.category_ids || [],
+          unit: match.unit || item.unit,
+          unit_quantity: match.unit_quantity || item.unit_quantity,
+        }
       }
+      return item
     } catch {
       return item
     }
