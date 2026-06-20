@@ -1,7 +1,9 @@
 import './ListItem.css'
 
-export default function ListItem({ item, onToggle, onRemove }) {
+export default function ListItem({ item, onToggle, onRemove, onUpdateQuantity }) {
   const fullName = [item.name, item.unit_quantity, item.unit].filter(Boolean).join(' ')
+  const quantity = item.quantity || 1
+  const totalPrice = item.price ? item.price * quantity : null
 
   return (
     <div className={`list-item ${item.checked ? 'checked' : ''}`}>
@@ -21,15 +23,35 @@ export default function ListItem({ item, onToggle, onRemove }) {
           </svg>
         )}
       </button>
+
       <div className="item-body">
         <span className="item-name">{fullName}</span>
-        {item.store && (
-          <span className="item-store">{item.store}</span>
-        )}
+        {item.store && <span className="item-store">{item.store}</span>}
       </div>
-      {item.price && (
-        <span className="item-price">€{item.price.toFixed(2)}</span>
+
+      {onUpdateQuantity && !item.checked && (
+        <div className="item-qty">
+          <button
+            className="item-qty-btn"
+            onClick={() => onUpdateQuantity(item.id, Math.max(1, quantity - 1))}
+            aria-label="Μείωση"
+          >−</button>
+          <span className="item-qty-num">{quantity}</span>
+          <button
+            className="item-qty-btn"
+            onClick={() => onUpdateQuantity(item.id, quantity + 1)}
+            aria-label="Αύξηση"
+          >+</button>
+        </div>
       )}
+
+      {totalPrice != null && (
+        <span className="item-price">
+          €{totalPrice.toFixed(2)}
+          {quantity > 1 && <span className="item-price-unit"> x{quantity}</span>}
+        </span>
+      )}
+
       <button
         className="item-remove"
         onClick={() => onRemove(item.id)}
