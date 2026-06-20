@@ -16,7 +16,7 @@
 .header-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
@@ -25,6 +25,7 @@
   font-weight: 700;
   color: var(--green);
   letter-spacing: -0.5px;
+  flex: 1;
 }
 
 .total-badge {
@@ -36,6 +37,62 @@
   border-radius: 20px;
 }
 
+/* ── Header buttons ── */
+.btn-refresh {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-refresh:active {
+  background: var(--gray-50);
+}
+
+.btn-favourites {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+.btn-favourites:active {
+  background: var(--gray-50);
+}
+
+/* ── Refresh toast ── */
+.refresh-toast {
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin: 0 0 8px;
+  text-align: center;
+  animation: flashIn 0.2s ease;
+}
+
+@keyframes flashIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Search ── */
 .search-form {
   display: flex;
   gap: 8px;
@@ -107,7 +164,9 @@
 .result-name { flex: 1; }
 .result-price { color: var(--green); font-weight: 600; margin-left: 8px; }
 .result-manual { color: var(--text-muted); font-size: 13px; }
+.result-loadmore { color: var(--green); font-weight: 500; justify-content: center; }
 
+/* ── Main ── */
 .list-main {
   flex: 1;
   padding: 12px;
@@ -140,29 +199,6 @@
   padding: 2px 8px;
 }
 
-.donate-footer {
-  padding: 1rem;
-  text-align: center;
-}
-
-.donate-btn {
-  display: inline-block;
-  font-size: 13px;
-  color: var(--text-muted);
-  text-decoration: none;
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-.result-loadmore {
-  color: var(--green);
-  font-weight: 500;
-  justify-content: center;
-}
-
-  
-  border-radius: 20px;
-}
-
-.donate-btn:hover { background: var(--gray-50); }
 .btn-find-stores {
   width: 100%;
   height: 48px;
@@ -175,72 +211,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
-  .btn-favourites {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-}
-
-.btn-refresh {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
   gap: 8px;
 }
 
 .btn-find-stores:disabled {
-
-/* Πρόσθεσε στο ListPage.css */
-
-.btn-favourites {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-}
-
-.btn-refresh {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Refresh toast ── */
-.refresh-toast {
-  background: #1a9e5c;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 10px;
-  margin: 6px 0 4px;
-  text-align: center;
-  animation: flashIn 0.2s ease;
-}
-
-  
   opacity: 0.7;
 }
+
+/* ── Footer ── */
+.donate-footer {
+  padding: 1rem;
+  text-align: center;
+}
+
+.donate-btn {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.donate-btn:hover { background: var(--gray-50); }
