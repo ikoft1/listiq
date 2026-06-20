@@ -24,8 +24,14 @@ body {
   background: var(--page-bg);
   color: var(--text);
   min-height: 100dvh;
+}
+
+#root {
   max-width: 480px;
   margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
 }
 
 button {
