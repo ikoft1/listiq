@@ -1,0 +1,158 @@
+.onboarding {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafb;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  padding-top: calc(24px + env(safe-area-inset-top));
+}
+
+.onboarding-inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* ── Logo ── */
+.onboarding-logo {
+  text-align: center;
+}
+
+.onboarding-logo-text {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a9e5c;
+  letter-spacing: -1px;
+}
+
+/* ── Card ── */
+.onboarding-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.onboarding-emoji {
+  font-size: 56px;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+.onboarding-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.onboarding-desc {
+  font-size: 15px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Dots ── */
+.onboarding-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  transition: all 0.2s;
+}
+
+.onboarding-dot--active {
+  background: #1a9e5c;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* ── Notice ── */
+.onboarding-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff8e1;
+  border: 1px solid #f59e0b;
+  border-radius: 14px;
+  padding: 14px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.onboarding-notice span {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.onboarding-notice p {
+  font-size: 13px;
+  color: #92400e;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Actions ── */
+.onboarding-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.onboarding-btn-primary {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.onboarding-btn-primary:active { background: #158a4f; }
+
+.onboarding-btn-skip {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: none;
+  color: #999;
+  font-size: 15px;
+  cursor: pointer;
+}
+.onboarding-btn-skip:active { color: #666; }
+
+/* ── Close button (modal mode) ── */
+.onboarding-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #999;
+  padding: 4px 8px;
+}
+
+.onboarding-inner {
+  position: relative;
+}
