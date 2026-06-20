@@ -1,85 +1,153 @@
-import { useState, useEffect } from 'react'
-import { getFavourites, removeFavourite } from '../hooks/useFavourites'
-import './FavouritesModal.css'
-
-export default function FavouritesModal({ onAdd, onClose }) {
-  const [favourites, setFavourites] = useState(getFavourites())
-  const [selected, setSelected] = useState({}) // id → true/false
-
-  function toggleSelect(id) {
-    setSelected(prev => ({ ...prev, [id]: !prev[id] }))
-  }
-
-  function handleRemove(id) {
-    setFavourites(removeFavourite(id))
-    setSelected(prev => { const s = { ...prev }; delete s[id]; return s })
-  }
-
-  function handleAdd() {
-    const toAdd = favourites.filter(f => selected[f.id])
-    if (toAdd.length === 0) return
-    onAdd(toAdd)
-    onClose()
-  }
-
-  const selectedCount = Object.values(selected).filter(Boolean).length
-
-  return (
-    <div className="fav-overlay" onClick={onClose}>
-      <div className="fav-modal" onClick={e => e.stopPropagation()}>
-        <div className="fav-header">
-          <h2 className="fav-title">⭐ Αγαπημένα</h2>
-          <button className="fav-close" onClick={onClose}>✕</button>
-        </div>
-
-        {favourites.length === 0 ? (
-          <div className="fav-empty">
-            <p>Δεν έχεις αγαπημένα ακόμα</p>
-            <p>Αποθήκευσε προϊόντα μετά τα ψώνια</p>
-          </div>
-        ) : (
-          <>
-            <div className="fav-list">
-              {favourites.map(f => {
-                const fullName = [f.name, f.unit_quantity, f.unit].filter(Boolean).join(' ')
-                const isSelected = !!selected[f.id]
-                return (
-                  <div key={f.id} className={`fav-item ${isSelected ? 'fav-item--selected' : ''}`}>
-                    <button className="fav-item-main" onClick={() => toggleSelect(f.id)}>
-                      <div className={`fav-checkbox ${isSelected ? 'fav-checkbox--checked' : ''}`}>
-                        {isSelected && <span>✓</span>}
-                      </div>
-                      <div className="fav-item-info">
-                        <span className="fav-item-name">{fullName}</span>
-                        {f.price && (
-                          <span className="fav-item-price">~€{f.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                    </button>
-                    <button className="fav-item-remove" onClick={() => handleRemove(f.id)} aria-label="Διαγραφή">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                      </svg>
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="fav-footer">
-              <button
-                className={`fav-add-btn ${selectedCount > 0 ? 'fav-add-btn--active' : ''}`}
-                onClick={handleAdd}
-                disabled={selectedCount === 0}
-              >
-                {selectedCount > 0
-                  ? `+ Πρόσθεσε ${selectedCount} στη λίστα`
-                  : 'Επίλεξε προϊόντα'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  )
+.fav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
 }
+
+.fav-modal {
+  background: #fff;
+  width: 100%;
+  border-radius: 24px 24px 0 0;
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.fav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.fav-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text, #111);
+}
+
+.fav-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.fav-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.fav-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.fav-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.fav-item--selected {
+  background: #f0faf5;
+}
+
+.fav-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 8px 12px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fav-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #d0d0d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #fff;
+  transition: all 0.15s;
+}
+
+.fav-checkbox--checked {
+  background: #1a9e5c;
+  border-color: #1a9e5c;
+}
+
+.fav-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fav-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #111);
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.fav-item-price {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+  display: block;
+}
+
+.fav-item-remove {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.fav-item-remove:active { opacity: 1; }
+
+.fav-footer {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.fav-add-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #e0e0e0;
+  color: #999;
+  transition: all 0.15s;
+}
+
+.fav-add-btn--active {
+  background: #1a9e5c;
+  color: #fff;
+}
+.fav-add-btn--active:active { background: #158a4f; }
