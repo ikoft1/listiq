@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useList } from '../hooks/useList'
-import { searchProducts, findBestStores } from '../lib/api'
+import { searchProducts, findBestStores, refreshItemPrices } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
@@ -11,7 +11,7 @@ import FavouritesModal from '../components/FavouritesModal'
 import './ListPage.css'
 
 export default function ListPage() {
-  const { items, addItem, toggleItem, removeItem, clearChecked, total, checkedCount } = useList()
+  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, total, checkedCount } = useList()
   const [query, setQuery] = useState('')
   const [shelfScanning, setShelfScanning] = useState(false)
   const [results, setResults] = useState([])
@@ -27,6 +27,7 @@ export default function ListPage() {
 
   // Shopping cart state
   const [shoppingCart, setShoppingCart] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
   const [showFavourites, setShowFavourites] = useState(false)
 
   const debounceRef = useRef(null)
@@ -66,6 +67,24 @@ export default function ListPage() {
     const stores = await findBestStores(activeItems)
     setStoreRanking(stores)
     setFindingStores(false)
+  }
+
+  async function handleRefreshPrices() {
+    setRefreshing(true)
+    const updated = await refreshItemPrices(items)
+    updated.forEach(item => {
+      const original = items.find(i => i.id === item.id)
+      if (original && (
+        original.price !== item.price ||
+        JSON.stringify(original.retailer_prices) !== JSON.stringify(item.retailer_prices)
+      )) {
+        updateItem(item.id, {
+          price: item.price,
+          retailer_prices: item.retailer_prices,
+        })
+      }
+    })
+    setRefreshing(false)
   }
 
   async function loadMore() {
@@ -132,6 +151,14 @@ export default function ListPage() {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
+          <button
+            className="btn-refresh"
+            onClick={handleRefreshPrices}
+            disabled={refreshing}
+            aria-label="Ανανέωση τιμών"
+          >
+            {refreshing ? '⏳' : '🔄'}
+          </button>
           <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
             ⭐
           </button>
