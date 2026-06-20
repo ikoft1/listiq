@@ -148,12 +148,23 @@ function PriceInputModal({ item, onSave, onClose }) {
 
 export default function ShoppingCartPage({ store, storeItems, allListItems, onClose }) {
   const merged = allListItems.map(listItem => {
-    const found = storeItems.find(i => i.name === listItem.name)
+    // Βρες τιμή απευθείας από retailer_prices του item για το συγκεκριμένο SM
+    const retailerPrice = listItem.retailer_prices?.find(
+      rp => rp.retailer === store.retailer
+    )?.price ?? null
+
+    // Fallback: ψάξε στο storeItems με name matching
+    const found = retailerPrice == null
+      ? storeItems.find(i => i.name?.toLowerCase().includes(listItem.name?.toLowerCase().split(' ').slice(0,3).join(' ').toLowerCase()))
+      : null
+
+    const estimatedPrice = retailerPrice ?? found?.price ?? null
+
     return {
       ...listItem,
       id: listItem.id || `list-${Math.random()}`,
-      estimatedPrice: found?.price ?? null,
-      shelfPrice: null,      // χειροκίνητη τιμή ραφιού
+      estimatedPrice,
+      shelfPrice: null,
       checked: false,
       isExtra: false,
     }
