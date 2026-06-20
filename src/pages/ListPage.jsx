@@ -268,9 +268,9 @@ export default function ListPage() {
           </div>
         )}
 
-        {unchecked.map(item => (
-          <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
-        ))}
+      {unchecked.map(item => (
+  <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} onUpdateQuantity={(id, qty) => updateItem(id, { quantity: qty })} />
+))}
 
         {unchecked.length >= 2 && (
           <button
