@@ -72,9 +72,6 @@ function CheckoutModal({ estimatedTotal, shelfTotal, estimatedMissing, shelfMiss
           </div>
         </div>
 
-        <button className="checkout-btn checkout-btn--secondary" onClick={onContinue}>
-          + Πρόσθεσε κάτι ακόμα
-        </button>
         <button
           className={`checkout-btn checkout-btn--fav ${saved ? 'checkout-btn--fav-saved' : ''}`}
           onClick={onSaveFavourites}
@@ -147,7 +144,7 @@ function PriceInputModal({ item, onSave, onClose }) {
   )
 }
 
-export default function ShoppingCartPage({ store, storeItems, allListItems, onClose }) {
+export default function ShoppingCartPage({ store, storeItems, allListItems, onClose, onNewList }) {
   const merged = allListItems.map(listItem => {
     // Βρες τιμή απευθείας από retailer_prices του item για το συγκεκριμένο SM
     const retailerPrice = listItem.retailer_prices?.find(
@@ -230,7 +227,9 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
 
   function handleSavePrice(price) {
     setCartItems(prev => prev.map(i =>
-      i.id === editingItem.id ? { ...i, shelfPrice: price } : i
+      i.id === editingItem.id
+        ? { ...i, shelfPrice: price, checked: price != null ? true : i.checked }
+        : i
     ))
     setEditingItem(null)
   }
@@ -428,7 +427,7 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
           shelfTotal={shelfTotal}
           estimatedMissing={estimatedMissing}
           shelfMissing={shelfMissing}
-          onNewList={() => { onClose(); }}
+          onNewList={onNewList || onClose}
           onContinue={() => setShowCheckout(false)}
           onSaveFavourites={handleSaveFavourites}
           saved={favouritesSaved}
