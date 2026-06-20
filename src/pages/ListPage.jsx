@@ -305,7 +305,7 @@ export default function ListPage() {
       </main>
 
       <footer className="donate-footer">
-        <a href="https://paypal.me/YOURPAYPAL" target="_blank" rel="noopener noreferrer" className="donate-btn">
+        <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
       </footer>
