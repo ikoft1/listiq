@@ -221,13 +221,7 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
   }
 
   function toggleItem(id) {
-    setCartItems(prev => {
-      const updated = prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i)
-      if (updated.length > 0 && updated.every(i => i.checked)) {
-        setTimeout(() => setShowCheckout(true), 400)
-      }
-      return updated
-    })
+    setCartItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
   }
 
   function handleLongPress(item) {
@@ -407,6 +401,11 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
         </div>
         {checkedItems.length === 0 && (
           <div className="cart-footer-hint">Tick ή σκανάρισε προϊόντα • Πάτα ✏️ για τιμή ραφιού</div>
+        )}
+        {checkedItems.length > 0 && (
+          <button className="cart-done-btn" onClick={() => setShowCheckout(true)}>
+            ✅ Τελείωσα
+          </button>
         )}
       </footer>
 
