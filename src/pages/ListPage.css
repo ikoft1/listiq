@@ -1,346 +1,273 @@
-import { useState, useEffect, useRef } from 'react'
-import { useList } from '../hooks/useList'
-import { searchProducts, findBestStores, refreshItemPrices } from '../lib/api'
-import BarcodeScanner from '../components/BarcodeScanner'
-import ShelfScanner from '../components/ShelfScanner'
-import ListItem from '../components/ListItem'
-import PriceModal from '../components/PriceModal'
-import StoreRankingModal from '../components/StoreRankingModal'
-import ShoppingCartPage from './ShoppingCartPage'
-import FavouritesModal from '../components/FavouritesModal'
-import OnboardingPage from './OnboardingPage'
-import './ListPage.css'
+.list-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
 
-export default function ListPage() {
-  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount } = useList()
-  const [query, setQuery] = useState('')
-  const [shelfScanning, setShelfScanning] = useState(false)
-  const [results, setResults] = useState([])
-  const [scanning, setScanning] = useState(false)
-  const [searching, setSearching] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasNext, setHasNext] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [noResults, setNoResults] = useState(false)
-  const [storeRanking, setStoreRanking] = useState(null)
-  const [findingStores, setFindingStores] = useState(false)
+.list-header {
+  background: #fff;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
 
-  // Shopping cart state
-  const [shoppingCart, setShoppingCart] = useState(null)
-  const [refreshing, setRefreshing] = useState(false)
-  const [refreshToast, setRefreshToast] = useState(null)
-  const [showFavourites, setShowFavourites] = useState(false)
-  const [showHelp, setShowHelp] = useState(false)
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 
-  const debounceRef = useRef(null)
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.5px;
+  flex: 1;
+}
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!query.trim() || query.trim().length < 3) {
-      setResults([])
-      setNoResults(false)
-      return
-    }
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true)
-      setResults([])
-      setNoResults(false)
-      setCurrentPage(1)
-      setHasNext(false)
-      try {
-        const { products, hasNext: next } = await searchProducts(query, 1)
-        if (products && products.length > 0) {
-          setResults(products)
-          setHasNext(next)
-        } else {
-          setNoResults(true)
-        }
-      } catch {
-        setNoResults(true)
-      }
-      setSearching(false)
-    }, 500)
-    return () => clearTimeout(debounceRef.current)
-  }, [query])
+.total-badge {
+  background: var(--green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
 
-  async function handleFindBestStores() {
-    setFindingStores(true)
-    const activeItems = items.filter(i => !i.checked)
-    const stores = await findBestStores(activeItems)
-    setStoreRanking(stores)
-    setFindingStores(false)
-  }
+/* ── Header buttons ── */
+.btn-refresh {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-refresh:active {
+  background: var(--gray-50);
+}
 
-  async function handleRefreshPrices() {
-    setRefreshing(true)
-    const updated = await refreshItemPrices(items)
-    let changedCount = 0
-    updated.forEach(item => {
-      const original = items.find(i => i.id === item.id)
-      if (original && (
-        original.price !== item.price ||
-        JSON.stringify(original.retailer_prices) !== JSON.stringify(item.retailer_prices)
-      )) {
-        updateItem(item.id, {
-          price: item.price,
-          retailer_prices: item.retailer_prices,
-        })
-        changedCount++
-      }
-    })
-    setRefreshing(false)
-    setRefreshToast(changedCount > 0
-      ? `✅ Ανανεώθηκαν ${changedCount} τιμές`
-      : '✅ Οι τιμές είναι ενημερωμένες'
-    )
-    setTimeout(() => setRefreshToast(null), 3000)
-  }
+.btn-favourites {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+.btn-favourites:active {
+  background: var(--gray-50);
+}
 
-  async function loadMore() {
-    setLoadingMore(true)
-    const nextPage = currentPage + 1
-    try {
-      const { products, hasNext: next } = await searchProducts(query, nextPage)
-      setResults(prev => [...prev, ...products])
-      setCurrentPage(nextPage)
-      setHasNext(next)
-    } catch {}
-    setLoadingMore(false)
-  }
+/* ── Refresh toast ── */
+.refresh-toast {
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin: 0 0 8px;
+  text-align: center;
+  animation: flashIn 0.2s ease;
+}
 
-  function handleAddResult(product) {
-    console.log('product', product)
-    addItem({
-      ...product,
-      name: `${product.brand} ${product.name}`.trim(),
-    })
-    setResults([])
-    setQuery('')
-    setSelectedProduct(null)
-    setNoResults(false)
-  }
+@keyframes flashIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-  function handleAddManual() {
-    if (!query.trim()) return
-    addItem({ name: query })
-    setQuery('')
-    setResults([])
-    setNoResults(false)
-  }
+/* ── Search ── */
+.search-form {
+  display: flex;
+  gap: 8px;
+}
 
-  function handleBarcode(product) {
-    setScanning(false)
-    if (product) addItem(product)
-  }
+.search-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  outline: none;
+  background: var(--gray-50);
+}
 
-  // Όταν ο χρήστης επιλέξει SM από το ranking → άνοιξε το cart
-  function handleStartShopping(store) {
-    const activeItems = items.filter(i => !i.checked)
-    setShoppingCart({ store, storeItems: store.items })
-    setStoreRanking(null)
-  }
+.search-input:focus {
+  border-color: var(--green);
+  background: #fff;
+}
 
-  // Αν είναι σε shopping mode → εμφάνισε το cart
-  if (shoppingCart) {
-    return (
-      <ShoppingCartPage
-        store={shoppingCart.store}
-        storeItems={shoppingCart.storeItems}
-        allListItems={items.filter(i => !i.checked)}
-        onClose={() => setShoppingCart(null)}
-        onNewList={() => { clearAll(); setShoppingCart(null); }}
-      />
-    )
-  }
+.btn-search {
+  width: 44px;
+  height: 44px;
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 22px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  const unchecked = items.filter(i => !i.checked)
-  const checked = items.filter(i => i.checked)
+.btn-scan {
+  width: 44px;
+  height: 44px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  return (
-    <div className="list-page">
-      <header className="list-header">
-        <div className="header-top">
-          <h1 className="logo">Listiq</h1>
-          <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
-            ?
-          </button>
-          <button
-            className="btn-refresh"
-            onClick={handleRefreshPrices}
-            disabled={refreshing}
-            aria-label="Ανανέωση τιμών"
-          >
-            {refreshing ? '⏳' : '🔄'}
-          </button>
-          <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
-            ⭐
-          </button>
-          {checkedCount > 0 && (
-            <div className="total-badge">
-              {total > 0 ? `€${total.toFixed(2)}` : `${checkedCount} ✓`}
-            </div>
-          )}
-        </div>
+.search-results {
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
 
-        {refreshToast && (
-          <div className="refresh-toast">{refreshToast}</div>
-        )}
+.result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  text-align: left;
+  color: var(--text);
+}
 
-        <form className="search-form" onSubmit={e => { e.preventDefault(); handleAddManual() }}>
-          <input
-            className="search-input"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setNoResults(false) }}
-            placeholder="Προσθήκη προϊόντος..."
-            autoComplete="off"
-          />
-          <button type="submit" className="btn-search" disabled={searching}>
-            {searching ? '...' : '+'}
-          </button>
-          <button
-            type="button"
-            className="btn-scan"
-            onClick={() => setShelfScanning(true)}
-            aria-label="Scan shelf label"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="7" width="18" height="10" rx="2"/>
-              <path d="M7 7V5M12 7V5M17 7V5M7 17v2M12 17v2M17 17v2"/>
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="btn-scan"
-            onClick={() => setScanning(true)}
-            aria-label="Scan barcode"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-              <line x1="8" y1="8" x2="8" y2="16"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="16" y1="8" x2="16" y2="16"/>
-            </svg>
-          </button>
-        </form>
+.result-row:last-child { border-bottom: none; }
+.result-row:hover { background: var(--gray-50); }
 
-        {results.length > 0 && (
-          <div className="search-results">
-            {results.map(r => (
-              <button key={r.id} className="result-row" onClick={() => handleAddResult(r)}>
-                <div className="result-info">
-                  <span className="result-name">{r.brand} {r.name}</span>
-                </div>
-                {r.price && <span className="result-price">από €{r.price?.toFixed(2)}</span>}
-              </button>
-            ))}
-            {hasNext && (
-              <button className="result-row result-loadmore" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? '...' : '↓ Περισσότερα αποτελέσματα'}
-              </button>
-            )}
-            <button className="result-row result-manual" onClick={handleAddManual}>
-              + Προσθήκη "{query}" χωρίς τιμή
-            </button>
-          </div>
-        )}
+.result-name { flex: 1; }
+.result-price { color: var(--green); font-weight: 600; margin-left: 8px; }
+.result-manual { color: var(--text-muted); font-size: 13px; }
+.result-loadmore { color: var(--green); font-weight: 500; justify-content: center; }
 
-        {noResults && (
-          <div className="search-results">
-            <div className="result-row" style={{ color: 'var(--text-secondary)', cursor: 'default' }}>
-              Δεν βρέθηκαν αποτελέσματα για "{query}"
-            </div>
-            <button className="result-row result-manual" onClick={handleAddManual}>
-              + Προσθήκη "{query}" χωρίς τιμή
-            </button>
-          </div>
-        )}
-      </header>
+/* ── Main ── */
+.list-main {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-      <main className="list-main">
-        {items.length === 0 && (
-          <div className="empty-state">
-            <p>Η λίστα σου είναι άδεια</p>
-            <p>Πρόσθεσε προϊόντα ή σκανάρε barcode</p>
-          </div>
-        )}
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 2;
+}
 
-        {unchecked.map(item => (
-          <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
-        ))}
+.checked-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
 
-        {unchecked.length >= 2 && (
-          <button
-            className="btn-find-stores"
-            onClick={handleFindBestStores}
-            disabled={findingStores}
-          >
-            {findingStores ? '⏳ Ψάχνω τιμές...' : '🛒 Βρες καλύτερο SM'}
-          </button>
-        )}
+.btn-clear {
+  font-size: 13px;
+  color: #ef4444;
+  padding: 2px 8px;
+}
 
-        {checked.length > 0 && (
-          <>
-            <div className="checked-divider">
-              <span>Αγοράστηκαν ({checked.length})</span>
-              <button onClick={clearChecked} className="btn-clear">Καθαρισμός</button>
-            </div>
-            {checked.map(item => (
-              <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
-            ))}
-          </>
-        )}
-      </main>
+.btn-find-stores {
+  width: 100%;
+  height: 48px;
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
 
-      <footer className="donate-footer">
-        <a href="https://paypal.me/YOURPAYPAL" target="_blank" rel="noopener noreferrer" className="donate-btn">
-          ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
-        </a>
-      </footer>
+.btn-find-stores:disabled {
+  opacity: 0.7;
+}
 
-      {scanning && (
-        <BarcodeScanner onResult={handleBarcode} onClose={() => setScanning(false)} />
-      )}
+/* ── Footer ── */
+.donate-footer {
+  padding: 1rem;
+  text-align: center;
+}
 
-      {shelfScanning && (
-        <ShelfScanner
-          onResult={product => { addItem(product); setShelfScanning(false) }}
-          onClose={() => setShelfScanning(false)}
-        />
-      )}
+.donate-btn {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
 
-      {selectedProduct && (
-        <PriceModal
-          product={selectedProduct}
-          onAdd={handleAddResult}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+.donate-btn:hover { background: var(--gray-50); }
 
-      {showHelp && (
-        <div className="help-overlay" onClick={() => setShowHelp(false)}>
-          <div className="help-modal" onClick={e => e.stopPropagation()}>
-            <OnboardingPage onDone={() => setShowHelp(false)} isModal />
-          </div>
-        </div>
-      )}
+/* ── Help button ── */
+.btn-help {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.btn-help:active { background: var(--gray-50); }
 
-      {showFavourites && (
-        <FavouritesModal
-          onAdd={products => products.forEach(p => addItem(p))}
-          onClose={() => setShowFavourites(false)}
-        />
-      )}
+/* ── Help overlay ── */
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
 
-      {storeRanking && (
-        <StoreRankingModal
-          stores={storeRanking}
-          totalItems={unchecked.length}
-          allListItems={unchecked}
-          onClose={() => setStoreRanking(null)}
-          onStartShopping={handleStartShopping}
-        />
-      )}
-    </div>
-  )
+.help-modal {
+  width: 100%;
+  max-height: 90dvh;
+  overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+  background: #f8fafb;
 }
