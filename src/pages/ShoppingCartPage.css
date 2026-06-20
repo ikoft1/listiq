@@ -600,3 +600,18 @@
   color: #1a9e5c;
   flex-shrink: 0;
 }
+
+/* ── Done button ── */
+.cart-done-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cart-done-btn:active { background: #158a4f; }
