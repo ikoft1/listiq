@@ -62,6 +62,7 @@ export function useList() {
         return {
           id: i.id,
           name: i.name,
+          brand: local?.brand || null,
           quantity: i.quantity,
           checked: i.checked,
           price: i.price,
@@ -69,6 +70,9 @@ export function useList() {
           barcode: i.barcode,
           product_id: local?.product_id || null,
           retailer_prices: local?.retailer_prices || [],
+          unit: local?.unit || null,
+          unit_quantity: local?.unit_quantity || null,
+          category_ids: local?.category_ids || [],
         }
       }))
     }
@@ -78,6 +82,7 @@ export function useList() {
     const item = {
       id: crypto.randomUUID(),
       name: product.name || product,
+      brand: product.brand || null,
       quantity: 1,
       checked: false,
       price: product.price || null,
@@ -85,6 +90,9 @@ export function useList() {
       barcode: product.barcode || null,
       product_id: product.id || null,
       retailer_prices: product.retailer_prices || [],
+      unit: product.unit || null,
+      unit_quantity: product.unit_quantity || null,
+      category_ids: product.category_ids || [],
     }
     setItems(prev => [item, ...prev])
     if (user && listId) {
