@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useList } from '../hooks/useList'
 import { searchProducts, findBestStores, refreshItemPrices } from '../lib/api'
-import BarcodeScanner from '../components/BarcodeScanner'
-import ShelfScanner from '../components/ShelfScanner'
 import ListItem from '../components/ListItem'
 import PriceModal from '../components/PriceModal'
 import StoreRankingModal from '../components/StoreRankingModal'
@@ -14,9 +12,7 @@ import './ListPage.css'
 export default function ListPage() {
   const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount } = useList()
   const [query, setQuery] = useState('')
-  const [shelfScanning, setShelfScanning] = useState(false)
   const [results, setResults] = useState([])
-  const [scanning, setScanning] = useState(false)
   const [searching, setSearching] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -26,7 +22,6 @@ export default function ListPage() {
   const [storeRanking, setStoreRanking] = useState(null)
   const [findingStores, setFindingStores] = useState(false)
 
-  // Shopping cart state
   const [shoppingCart, setShoppingCart] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshToast, setRefreshToast] = useState(null)
@@ -113,7 +108,6 @@ export default function ListPage() {
   }
 
   function handleAddResult(product) {
-    console.log('product', product)
     addItem({
       ...product,
       name: `${product.brand} ${product.name}`.trim(),
@@ -132,14 +126,7 @@ export default function ListPage() {
     setNoResults(false)
   }
 
-  function handleBarcode(product) {
-    setScanning(false)
-    if (product) addItem(product)
-  }
-
-  // Όταν ο χρήστης επιλέξει SM από το ranking → άνοιξε το cart
   function handleStartShopping(store) {
-    const activeItems = items.filter(i => !i.checked)
     setShoppingCart({ store, storeItems: store.items })
     setStoreRanking(null)
   }
@@ -153,7 +140,6 @@ export default function ListPage() {
     )
   }
 
-  // Αν είναι σε shopping mode → εμφάνισε το cart
   if (shoppingCart) {
     return (
       <ShoppingCartPage
@@ -210,30 +196,6 @@ export default function ListPage() {
           <button type="submit" className="btn-search" disabled={searching}>
             {searching ? '...' : '+'}
           </button>
-          <button
-            type="button"
-            className="btn-scan"
-            onClick={() => setShelfScanning(true)}
-            aria-label="Scan shelf label"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="7" width="18" height="10" rx="2"/>
-              <path d="M7 7V5M12 7V5M17 7V5M7 17v2M12 17v2M17 17v2"/>
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="btn-scan"
-            onClick={() => setScanning(true)}
-            aria-label="Scan barcode"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-              <line x1="8" y1="8" x2="8" y2="16"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="16" y1="8" x2="16" y2="16"/>
-            </svg>
-          </button>
         </form>
 
         {results.length > 0 && (
@@ -273,7 +235,7 @@ export default function ListPage() {
         {items.length === 0 && (
           <div className="empty-state">
             <p>Η λίστα σου είναι άδεια</p>
-            <p>Πρόσθεσε προϊόντα ή σκανάρε barcode</p>
+            <p>Πρόσθεσε προϊόντα με αναζήτηση</p>
           </div>
         )}
 
@@ -309,17 +271,6 @@ export default function ListPage() {
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
       </footer>
-
-      {scanning && (
-        <BarcodeScanner onResult={handleBarcode} onClose={() => setScanning(false)} />
-      )}
-
-      {shelfScanning && (
-        <ShelfScanner
-          onResult={product => { addItem(product); setShelfScanning(false) }}
-          onClose={() => setShelfScanning(false)}
-        />
-      )}
 
       {selectedProduct && (
         <PriceModal
