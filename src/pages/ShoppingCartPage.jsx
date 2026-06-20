@@ -158,12 +158,16 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
       ? storeItems.find(i => i.name?.toLowerCase().includes(listItem.name?.toLowerCase().split(' ').slice(0,3).join(' ').toLowerCase()))
       : null
 
-    const estimatedPrice = retailerPrice ?? found?.price ?? null
+    const basePrice = retailerPrice ?? found?.price ?? null
+    const quantity = listItem.quantity || 1
+    const estimatedPrice = basePrice != null ? basePrice * quantity : null
 
     return {
       ...listItem,
       id: listItem.id || `list-${Math.random()}`,
       estimatedPrice,
+      basePrice,
+      quantity,
       shelfPrice: null,
       checked: false,
       isExtra: false,
@@ -404,6 +408,8 @@ function CartItem({ item, onToggle, onLongPress }) {
     item.unit,
   ].filter(Boolean).join(' ')
 
+  const quantity = item.quantity || 1
+
   return (
     <div className={`cart-item ${item.checked ? 'cart-item--checked' : ''}`}>
       <button className="cart-item-main" onClick={() => onToggle(item.id)}>
@@ -412,6 +418,7 @@ function CartItem({ item, onToggle, onLongPress }) {
         </div>
         <div className="cart-item-info">
           <span className="cart-item-name">
+            {quantity > 1 && <span className="cart-item-qty">x{quantity} </span>}
             {fullName}
             {item.isExtra && <span className="cart-item-badge">+</span>}
           </span>
