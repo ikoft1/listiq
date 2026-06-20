@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BarcodeScanner from '../components/BarcodeScanner'
+import { addFavourites } from '../hooks/useFavourites'
 import './ShoppingCartPage.css'
 
 const CATEGORY_LABELS = {
@@ -48,6 +49,46 @@ function groupByCategory(items) {
 }
 
 // Numpad modal για εισαγωγή τιμής ραφιού
+
+function CheckoutModal({ estimatedTotal, shelfTotal, estimatedMissing, shelfMissing, onNewList, onContinue, onSaveFavourites, saved }) {
+  return (
+    <div className="checkout-overlay">
+      <div className="checkout-modal">
+        <div className="checkout-icon">🛒</div>
+        <h2 className="checkout-title">Τελείωσες;</h2>
+
+        <div className="checkout-totals">
+          <div className="checkout-total-col">
+            <div className="checkout-total-label">~Εκτίμηση</div>
+            <div className="checkout-total-amount">{estimatedTotal > 0 ? `€${estimatedTotal.toFixed(2)}` : '—'}</div>
+            {estimatedMissing > 0 && <div className="checkout-total-missing">+{estimatedMissing} χωρίς τιμή</div>}
+          </div>
+          <div className="checkout-divider" />
+          <div className="checkout-total-col">
+            <div className="checkout-total-label">Τιμή ραφιού</div>
+            <div className="checkout-total-amount checkout-total-amount--shelf">{shelfTotal > 0 ? `€${shelfTotal.toFixed(2)}` : '—'}</div>
+            {shelfMissing > 0 && <div className="checkout-total-missing">+{shelfMissing} χωρίς τιμή</div>}
+          </div>
+        </div>
+
+        <button className="checkout-btn checkout-btn--secondary" onClick={onContinue}>
+          + Πρόσθεσε κάτι ακόμα
+        </button>
+        <button
+          className={`checkout-btn checkout-btn--fav ${saved ? 'checkout-btn--fav-saved' : ''}`}
+          onClick={onSaveFavourites}
+          disabled={saved}
+        >
+          {saved ? '✅ Αποθηκεύτηκαν!' : '⭐ Αποθήκευση ως αγαπημένα'}
+        </button>
+        <button className="checkout-btn checkout-btn--primary" onClick={onNewList}>
+          🛒 Νέα λίστα
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function PriceInputModal({ item, onSave, onClose }) {
   const [value, setValue] = useState(item.shelfPrice != null ? String(item.shelfPrice) : '')
 
@@ -121,10 +162,23 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
   const [cartItems, setCartItems] = useState(merged)
   const [scanning, setScanning] = useState(false)
   const [flash, setFlash] = useState(null)
-  const [editingItem, setEditingItem] = useState(null) // item για numpad
+  const [editingItem, setEditingItem] = useState(null)
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [favouritesSaved, setFavouritesSaved] = useState(false)
+
+  function handleSaveFavourites() {
+    addFavourites(cartItems)
+    setFavouritesSaved(true)
+  }
 
   function toggleItem(id) {
-    setCartItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
+    setCartItems(prev => {
+      const updated = prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i)
+      if (updated.length > 0 && updated.every(i => i.checked)) {
+        setTimeout(() => setShowCheckout(true), 400)
+      }
+      return updated
+    })
   }
 
   function handleLongPress(item) {
@@ -296,6 +350,19 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
 
       {scanning && (
         <BarcodeScanner onResult={handleBarcode} onClose={() => setScanning(false)} />
+      )}
+
+      {showCheckout && (
+        <CheckoutModal
+          estimatedTotal={estimatedTotal}
+          shelfTotal={shelfTotal}
+          estimatedMissing={estimatedMissing}
+          shelfMissing={shelfMissing}
+          onNewList={() => { onClose(); }}
+          onContinue={() => setShowCheckout(false)}
+          onSaveFavourites={handleSaveFavourites}
+          saved={favouritesSaved}
+        />
       )}
     </div>
   )
