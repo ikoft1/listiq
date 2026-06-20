@@ -28,6 +28,7 @@ export default function ListPage() {
   // Shopping cart state
   const [shoppingCart, setShoppingCart] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshToast, setRefreshToast] = useState(null)
   const [showFavourites, setShowFavourites] = useState(false)
 
   const debounceRef = useRef(null)
@@ -72,6 +73,7 @@ export default function ListPage() {
   async function handleRefreshPrices() {
     setRefreshing(true)
     const updated = await refreshItemPrices(items)
+    let changedCount = 0
     updated.forEach(item => {
       const original = items.find(i => i.id === item.id)
       if (original && (
@@ -82,9 +84,15 @@ export default function ListPage() {
           price: item.price,
           retailer_prices: item.retailer_prices,
         })
+        changedCount++
       }
     })
     setRefreshing(false)
+    setRefreshToast(changedCount > 0
+      ? `✅ Ανανεώθηκαν ${changedCount} τιμές`
+      : '✅ Οι τιμές είναι ενημερωμένες'
+    )
+    setTimeout(() => setRefreshToast(null), 3000)
   }
 
   async function loadMore() {
@@ -168,6 +176,10 @@ export default function ListPage() {
             </div>
           )}
         </div>
+
+        {refreshToast && (
+          <div className="refresh-toast">{refreshToast}</div>
+        )}
 
         <form className="search-form" onSubmit={e => { e.preventDefault(); handleAddManual() }}>
           <input
