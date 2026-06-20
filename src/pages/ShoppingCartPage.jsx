@@ -47,36 +47,100 @@ function groupByCategory(items) {
   })
 }
 
-// store: { retailer, name }
-// storeItems: προϊόντα που βρέθηκαν στο SM (με τιμή PosoKanei)
-// allListItems: όλη η λίστα του χρήστη
-export default function ShoppingCartPage({ store, storeItems, allListItems, onClose }) {
+// Numpad modal για εισαγωγή τιμής ραφιού
+function PriceInputModal({ item, onSave, onClose }) {
+  const [value, setValue] = useState(item.shelfPrice != null ? String(item.shelfPrice) : '')
 
+  function handleKey(k) {
+    if (k === '⌫') {
+      setValue(v => v.slice(0, -1))
+    } else if (k === '.') {
+      if (!value.includes('.')) setValue(v => v + '.')
+    } else {
+      // max 6 chars
+      if (value.length < 6) setValue(v => v + k)
+    }
+  }
+
+  function handleSave() {
+    const num = parseFloat(value)
+    onSave(isNaN(num) ? null : num)
+  }
+
+  function handleClear() {
+    onSave(null)
+    onClose()
+  }
+
+  const keys = ['1','2','3','4','5','6','7','8','9','.','0','⌫']
+
+  return (
+    <div className="price-modal-overlay" onClick={onClose}>
+      <div className="price-modal" onClick={e => e.stopPropagation()}>
+        <div className="price-modal-header">
+          <span className="price-modal-name">{item.brand ? `${item.brand} ` : ''}{item.name}</span>
+          <button className="price-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="price-modal-display">
+          {value ? `€${value}` : <span className="price-modal-placeholder">0.00</span>}
+        </div>
+
+        <div className="price-modal-hint">Τιμή ραφιού</div>
+
+        <div className="numpad">
+          {keys.map(k => (
+            <button key={k} className={`numpad-key ${k === '⌫' ? 'numpad-key--back' : ''}`} onClick={() => handleKey(k)}>
+              {k}
+            </button>
+          ))}
+        </div>
+
+        <div className="price-modal-actions">
+          <button className="price-modal-clear" onClick={handleClear}>Διαγραφή</button>
+          <button className="price-modal-save" onClick={handleSave}>Αποθήκευση</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function ShoppingCartPage({ store, storeItems, allListItems, onClose }) {
   const merged = allListItems.map(listItem => {
     const found = storeItems.find(i => i.name === listItem.name)
     return {
       ...listItem,
       id: listItem.id || `list-${Math.random()}`,
-      estimatedPrice: found?.price ?? null,  // τιμή PosoKanei, εκτίμηση
-      scannedPrice: null,                    // πραγματική τιμή ραφιού
-      scanned: false,
+      estimatedPrice: found?.price ?? null,
+      shelfPrice: null,      // χειροκίνητη τιμή ραφιού
       checked: false,
-      hasPrice: !!found,
       isExtra: false,
     }
   })
 
   const [cartItems, setCartItems] = useState(merged)
   const [scanning, setScanning] = useState(false)
-  const [flash, setFlash] = useState(null) // { name, scannedPrice, estimatedPrice, isNew }
+  const [flash, setFlash] = useState(null)
+  const [editingItem, setEditingItem] = useState(null) // item για numpad
 
   function toggleItem(id) {
     setCartItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
   }
 
+  function handleLongPress(item) {
+    setEditingItem(item)
+  }
+
+  function handleSavePrice(price) {
+    setCartItems(prev => prev.map(i =>
+      i.id === editingItem.id ? { ...i, shelfPrice: price } : i
+    ))
+    setEditingItem(null)
+  }
+
   function showFlash(data) {
     setFlash(data)
-    setTimeout(() => setFlash(null), 3000)
+    setTimeout(() => setFlash(null), 2500)
   }
 
   async function handleBarcode(product) {
@@ -84,61 +148,41 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
     if (!product) return
 
     const fullName = `${product.brand || ''} ${product.name}`.trim()
-
-    // Βρες την τιμή του συγκεκριμένου SM από retailer_prices
-    const retailerPrice = product.retailer_prices?.find(
-      rp => rp.retailer === store.retailer
-    )?.price ?? product.price ?? null
-
-    // Ψάξε αν υπάρχει ήδη στο cart
     const existingIdx = cartItems.findIndex(i =>
       i.id === product.id ||
       i.name?.toLowerCase().trim() === product.name?.toLowerCase().trim()
     )
 
     if (existingIdx >= 0) {
-      // Υπάρχει → ενημέρωσε με πραγματική τιμή + τσεκάρισμα
-      const existing = cartItems[existingIdx]
       setCartItems(prev => prev.map((i, idx) =>
-        idx === existingIdx
-          ? { ...i, scannedPrice: retailerPrice, scanned: true, checked: true }
-          : i
+        idx === existingIdx ? { ...i, checked: true } : i
       ))
-      showFlash({
-        name: fullName,
-        scannedPrice: retailerPrice,
-        estimatedPrice: existing.estimatedPrice,
-        isNew: false,
-      })
+      showFlash({ name: fullName, isNew: false })
     } else {
-      // Νέο προϊόν → προσθήκη με πραγματική τιμή
       const newItem = {
         ...product,
         name: product.name,
         brand: product.brand || '',
         id: product.id || `extra-${Math.random()}`,
-        estimatedPrice: null,
-        scannedPrice: retailerPrice,
-        scanned: true,
+        estimatedPrice: product.price || null,
+        shelfPrice: null,
         checked: true,
-        hasPrice: !!retailerPrice,
         isExtra: true,
       }
       setCartItems(prev => [...prev, newItem])
-      showFlash({
-        name: fullName,
-        scannedPrice: retailerPrice,
-        estimatedPrice: null,
-        isNew: true,
-      })
+      showFlash({ name: fullName, isNew: true })
     }
   }
 
-  // Σύνολο: μόνο σκαναρισμένα (πραγματικές τιμές)
-  const scannedItems = cartItems.filter(i => i.scanned && i.scannedPrice)
-  const total = scannedItems.reduce((sum, i) => sum + i.scannedPrice, 0)
-  const checkedCount = cartItems.filter(i => i.checked).length
-  const scannedCount = scannedItems.length
+  const checkedItems = cartItems.filter(i => i.checked)
+
+  // Στήλη 1: εκτίμηση PosoKanei
+  const estimatedTotal = checkedItems.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0)
+  const estimatedMissing = checkedItems.filter(i => i.estimatedPrice == null).length
+
+  // Στήλη 2: τιμές ραφιού (μόνο αυτά που έχουν shelfPrice)
+  const shelfTotal = checkedItems.reduce((sum, i) => sum + (i.shelfPrice || 0), 0)
+  const shelfMissing = checkedItems.filter(i => i.shelfPrice == null).length
 
   const unchecked = cartItems.filter(i => !i.checked)
   const checked = cartItems.filter(i => i.checked)
@@ -162,26 +206,10 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
         </button>
       </header>
 
-      {/* Scan flash */}
+      {/* Flash */}
       {flash && (
         <div className={`scan-flash ${flash.isNew ? 'scan-flash--new' : 'scan-flash--found'}`}>
-          <div className="scan-flash-name">
-            {flash.isNew ? '✚' : '✓'} {flash.name}
-          </div>
-          {flash.scannedPrice != null && (
-            <div className="scan-flash-price">
-              €{flash.scannedPrice.toFixed(2)}
-              {!flash.isNew && flash.estimatedPrice != null && flash.estimatedPrice !== flash.scannedPrice && (
-                <span className="scan-flash-diff">
-                  {' '}({flash.scannedPrice > flash.estimatedPrice ? '+' : ''}
-                  €{(flash.scannedPrice - flash.estimatedPrice).toFixed(2)} vs Poso Kanei)
-                </span>
-              )}
-            </div>
-          )}
-          {flash.scannedPrice == null && (
-            <div className="scan-flash-price">Τιμή άγνωστη</div>
-          )}
+          {flash.isNew ? '✚ Προστέθηκε: ' : '✓ Βρέθηκε: '}<strong>{flash.name}</strong>
         </div>
       )}
 
@@ -191,46 +219,80 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
           <div key={category} className="cart-category">
             <div className="cart-category-label">{category}</div>
             {items.map(item => (
-              <CartItem key={item.id} item={item} onToggle={toggleItem} />
+              <CartItem
+                key={item.id}
+                item={item}
+                onToggle={toggleItem}
+                onLongPress={handleLongPress}
+              />
             ))}
           </div>
         ))}
 
         {checked.length > 0 && (
           <div className="cart-checked-section">
-            <div className="cart-checked-divider">
-              Στο καλάθι ({checkedCount})
-            </div>
+            <div className="cart-checked-divider">Στο καλάθι ({checkedItems.length})</div>
             {groupByCategory(checked).map(([category, items]) => (
               <div key={category} className="cart-category cart-category--checked">
                 <div className="cart-category-label">{category}</div>
                 {items.map(item => (
-                  <CartItem key={item.id} item={item} onToggle={toggleItem} />
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onToggle={toggleItem}
+                    onLongPress={handleLongPress}
+                  />
                 ))}
               </div>
             ))}
           </div>
         )}
+
+        {cartItems.length === 0 && (
+          <div className="cart-empty"><p>Δεν υπάρχουν προϊόντα</p></div>
+        )}
       </main>
 
-      {/* Footer */}
+      {/* Footer — 2 στήλες */}
       <footer className="cart-footer">
-        <div className="cart-total-row">
-          <div>
-            <div className="cart-total-label">
-              {scannedCount > 0 ? `${scannedCount} σκαναρισμένα` : 'Σκανάρισε για σύνολο'}
+        <div className="cart-totals">
+          <div className="cart-total-col">
+            <div className="cart-total-label">~Εκτίμηση</div>
+            <div className="cart-total-amount">
+              {estimatedTotal > 0 ? `€${estimatedTotal.toFixed(2)}` : '—'}
             </div>
-            {checkedCount > scannedCount && (
-              <div className="cart-total-sublabel">
-                +{checkedCount - scannedCount} χωρίς σάρωση
+            {estimatedMissing > 0 && checkedItems.length > 0 && (
+              <div className="cart-total-missing">+{estimatedMissing} χωρίς τιμή</div>
+            )}
+          </div>
+
+          <div className="cart-total-divider" />
+
+          <div className="cart-total-col">
+            <div className="cart-total-label">Τιμή ραφιού</div>
+            <div className="cart-total-amount cart-total-amount--shelf">
+              {shelfTotal > 0 ? `€${shelfTotal.toFixed(2)}` : '—'}
+            </div>
+            {checkedItems.length > 0 && (
+              <div className="cart-total-missing">
+                {shelfMissing > 0 ? `+${shelfMissing} χωρίς τιμή` : '✓ Όλα έχουν τιμή'}
               </div>
             )}
           </div>
-          <div className="cart-total-amount">
-            {total > 0 ? `€${total.toFixed(2)}` : '—'}
-          </div>
         </div>
+        {checkedItems.length === 0 && (
+          <div className="cart-footer-hint">Tick ή σκανάρισε προϊόντα • Πάτα ✏️ για τιμή ραφιού</div>
+        )}
       </footer>
+
+      {/* Numpad modal */}
+      {editingItem && (
+        <PriceInputModal
+          item={editingItem}
+          onSave={handleSavePrice}
+          onClose={() => setEditingItem(null)}
+        />
+      )}
 
       {scanning && (
         <BarcodeScanner onResult={handleBarcode} onClose={() => setScanning(false)} />
@@ -239,48 +301,41 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
   )
 }
 
-function CartItem({ item, onToggle }) {
-  const priceDiff = item.scanned && item.scannedPrice != null && item.estimatedPrice != null
-    ? item.scannedPrice - item.estimatedPrice
-    : null
+function CartItem({ item, onToggle, onLongPress }) {
+  // Πλήρες όνομα: name (ήδη περιέχει brand) + unit_quantity + unit
+  const fullName = [
+    item.name,
+    item.unit_quantity,
+    item.unit,
+  ].filter(Boolean).join(' ')
 
   return (
-    <button
-      className={`cart-item ${item.checked ? 'cart-item--checked' : ''} ${item.scanned ? 'cart-item--scanned' : ''}`}
-      onClick={() => onToggle(item.id)}
-    >
-      <div className={`cart-checkbox ${item.checked ? 'cart-checkbox--checked' : ''} ${item.scanned ? 'cart-checkbox--scanned' : ''}`}>
-        {item.checked && <span>✓</span>}
-      </div>
-
-      <div className="cart-item-info">
-        <span className="cart-item-name">
-          {item.brand ? `${item.brand} ` : ''}{item.name}
-          {item.isExtra && <span className="cart-item-badge cart-item-badge--extra">+</span>}
-        </span>
-        {item.unit && (
-          <span className="cart-item-unit">{item.unit_quantity} {item.unit}</span>
-        )}
-      </div>
-
-      <div className="cart-item-price-col">
-        {item.scanned ? (
-          <>
-            <span className="cart-item-price cart-item-price--real">
-              {item.scannedPrice != null ? `€${item.scannedPrice.toFixed(2)}` : '—'}
-            </span>
-            {priceDiff !== null && priceDiff !== 0 && (
-              <span className={`cart-price-diff ${priceDiff > 0 ? 'cart-price-diff--up' : 'cart-price-diff--down'}`}>
-                {priceDiff > 0 ? '+' : ''}€{priceDiff.toFixed(2)}
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="cart-item-price cart-item-price--estimated">
-            {item.estimatedPrice != null ? `~€${item.estimatedPrice.toFixed(2)}` : '—'}
+    <div className={`cart-item ${item.checked ? 'cart-item--checked' : ''}`}>
+      <button className="cart-item-main" onClick={() => onToggle(item.id)}>
+        <div className={`cart-checkbox ${item.checked ? 'cart-checkbox--checked' : ''}`}>
+          {item.checked && <span>✓</span>}
+        </div>
+        <div className="cart-item-info">
+          <span className="cart-item-name">
+            {fullName}
+            {item.isExtra && <span className="cart-item-badge">+</span>}
           </span>
-        )}
-      </div>
-    </button>
+          <div className="cart-item-prices-row">
+            <span className="cart-item-price--estimated">
+              {item.estimatedPrice != null ? `~€${item.estimatedPrice.toFixed(2)}` : '—'}
+            </span>
+            {item.shelfPrice != null && (
+              <>
+                <span className="cart-item-price--sep">→</span>
+                <span className="cart-item-price--shelf">€{item.shelfPrice.toFixed(2)}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </button>
+      <button className="cart-item-edit" onClick={() => onLongPress(item)} aria-label="Τιμή ραφιού">
+        ✏️
+      </button>
+    </div>
   )
 }
