@@ -202,5 +202,45 @@
 }
 
 .btn-find-stores:disabled {
+
+/* Πρόσθεσε στο ListPage.css */
+
+.btn-favourites {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.btn-refresh {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Refresh toast ── */
+.refresh-toast {
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin: 6px 0 4px;
+  text-align: center;
+  animation: flashIn 0.2s ease;
+}
+
+  
   opacity: 0.7;
 }
