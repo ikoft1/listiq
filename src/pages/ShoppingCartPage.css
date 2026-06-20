@@ -615,3 +615,13 @@
   cursor: pointer;
 }
 .cart-done-btn:active { background: #158a4f; }
+
+.checkout-btn--back {
+  background: none;
+  color: var(--text-muted, #999);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 14px;
+}
+.checkout-btn--back:active { background: #f5f5f5; }
