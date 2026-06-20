@@ -219,3 +219,24 @@ export async function findBestStores(items) {
       missing: allItems.filter(name => !s.items.find(i => i.name === name)),
     }))
 }
+
+export async function refreshItemPrices(items) {
+  const updated = await Promise.all(items.map(async item => {
+    if (!item.product_id) return item
+    try {
+      const res = await fetch(`${WORKER}/product/${item.product_id}`)
+      if (!res.ok) return item
+      const data = await res.json()
+      const p = (data.products || [])[0]
+      if (!p) return item
+      return {
+        ...item,
+        price: p.price_stats?.min_price || item.price,
+        retailer_prices: p.retailer_prices || item.retailer_prices,
+      }
+    } catch {
+      return item
+    }
+  }))
+  return updated
+}
