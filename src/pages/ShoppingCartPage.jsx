@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import { addFavourites } from '../hooks/useFavourites'
+import { searchProducts } from '../lib/api'
 import './ShoppingCartPage.css'
 
 const CATEGORY_LABELS = {
@@ -176,10 +177,47 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
   const [editingItem, setEditingItem] = useState(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [favouritesSaved, setFavouritesSaved] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const searchDebounce = useState(null)
 
   function handleSaveFavourites() {
     addFavourites(cartItems)
     setFavouritesSaved(true)
+  }
+
+  async function handleSearch(q) {
+    setSearchQuery(q)
+    setSearchResults([])
+    if (!q.trim() || q.trim().length < 3) return
+    setSearching(true)
+    try {
+      const { products } = await searchProducts(q, 1)
+      setSearchResults(products || [])
+    } catch {}
+    setSearching(false)
+  }
+
+  function handleAddFromSearch(product) {
+    const fullName = `${product.brand} ${product.name}`.trim()
+    const retailerPrice = product.retailer_prices?.find(
+      rp => rp.retailer === store.retailer
+    )?.price ?? product.price ?? null
+
+    const newItem = {
+      ...product,
+      name: product.name,
+      brand: product.brand || '',
+      id: product.id || `extra-${Math.random()}`,
+      estimatedPrice: retailerPrice,
+      shelfPrice: null,
+      checked: false,
+      isExtra: true,
+    }
+    setCartItems(prev => [...prev, newItem])
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   function toggleItem(id) {
@@ -270,6 +308,28 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
           </svg>
         </button>
       </header>
+
+      {/* Search bar */}
+      <div className="cart-search-bar">
+        <input
+          className="cart-search-input"
+          value={searchQuery}
+          onChange={e => handleSearch(e.target.value)}
+          placeholder="Προσθήκη προϊόντος..."
+          autoComplete="off"
+        />
+        {searching && <span className="cart-search-spinner">...</span>}
+        {searchResults.length > 0 && (
+          <div className="cart-search-results">
+            {searchResults.map(r => (
+              <button key={r.id} className="cart-search-result-row" onClick={() => handleAddFromSearch(r)}>
+                <span className="cart-search-result-name">{r.brand} {r.name} {r.unit_quantity} {r.unit}</span>
+                {r.price && <span className="cart-search-result-price">~€{r.price.toFixed(2)}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Flash */}
       {flash && (
