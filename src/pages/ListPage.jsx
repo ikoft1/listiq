@@ -32,6 +32,9 @@ export default function ListPage() {
   const [refreshToast, setRefreshToast] = useState(null)
   const [showFavourites, setShowFavourites] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [onboardingDone, setOnboardingDone] = useState(() => {
+    return localStorage.getItem('listiq_onboarding_done') === 'true'
+  })
 
   const debounceRef = useRef(null)
 
@@ -139,6 +142,15 @@ export default function ListPage() {
     const activeItems = items.filter(i => !i.checked)
     setShoppingCart({ store, storeItems: store.items })
     setStoreRanking(null)
+  }
+
+  if (!onboardingDone) {
+    return (
+      <OnboardingPage onDone={() => {
+        localStorage.setItem('listiq_onboarding_done', 'true')
+        setOnboardingDone(true)
+      }} />
+    )
   }
 
   // Αν είναι σε shopping mode → εμφάνισε το cart
