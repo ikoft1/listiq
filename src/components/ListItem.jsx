@@ -1,6 +1,8 @@
 import './ListItem.css'
 
 export default function ListItem({ item, onToggle, onRemove }) {
+  const fullName = [item.name, item.unit_quantity, item.unit].filter(Boolean).join(' ')
+
   return (
     <div className={`list-item ${item.checked ? 'checked' : ''}`}>
       <button
@@ -19,18 +21,15 @@ export default function ListItem({ item, onToggle, onRemove }) {
           </svg>
         )}
       </button>
-
       <div className="item-body">
-        <span className="item-name">{item.name}</span>
+        <span className="item-name">{fullName}</span>
         {item.store && (
           <span className="item-store">{item.store}</span>
         )}
       </div>
-
       {item.price && (
         <span className="item-price">€{item.price.toFixed(2)}</span>
       )}
-
       <button
         className="item-remove"
         onClick={() => onRemove(item.id)}
