@@ -21,6 +21,6 @@ export default function App() {
   }, [])
 
   if (loading) return null
-  if (!user && !guest) return <AuthPage onGuest={() => setGuest(true)} />
+ // if (!user && !guest) return <AuthPage onGuest={() => setGuest(true)} />
   return <ListPage />
 }
