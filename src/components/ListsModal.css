@@ -1,82 +1,242 @@
-2026-06-21T16:50:47.827475Z	Cloning repository...
-2026-06-21T16:50:48.641006Z	From https://github.com/ikoft1/listiq
-2026-06-21T16:50:48.641262Z	 * branch            e0a4c3a92caf070c78b040f292206b10ae1dd09d -> FETCH_HEAD
-2026-06-21T16:50:48.641383Z	
-2026-06-21T16:50:48.657728Z	HEAD is now at e0a4c3a Update ListPage.css
-2026-06-21T16:50:48.657957Z	
-2026-06-21T16:50:48.696862Z	
-2026-06-21T16:50:48.697126Z	Using v2 root directory strategy
-2026-06-21T16:50:48.709785Z	Success: Finished cloning repository files
-2026-06-21T16:50:50.338646Z	Checking for configuration in a Wrangler configuration file (BETA)
-2026-06-21T16:50:50.339053Z	
-2026-06-21T16:50:50.481095Z	No Wrangler configuration file found. Continuing.
-2026-06-21T16:50:50.838216Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-2026-06-21T16:50:50.838592Z	Installing project dependencies: npm install --progress=false
-2026-06-21T16:51:03.970647Z	npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
-2026-06-21T16:51:04.303246Z	npm warn deprecated glob@11.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
-2026-06-21T16:51:06.03894Z	
-2026-06-21T16:51:06.039331Z	added 394 packages, and audited 395 packages in 14s
-2026-06-21T16:51:06.039578Z	
-2026-06-21T16:51:06.039642Z	102 packages are looking for funding
-2026-06-21T16:51:06.039817Z	  run `npm fund` for details
-2026-06-21T16:51:06.047979Z	
-2026-06-21T16:51:06.048232Z	3 vulnerabilities (2 moderate, 1 high)
-2026-06-21T16:51:06.04831Z	
-2026-06-21T16:51:06.048371Z	To address all issues (including breaking changes), run:
-2026-06-21T16:51:06.04843Z	  npm audit fix --force
-2026-06-21T16:51:06.048489Z	
-2026-06-21T16:51:06.048547Z	Run `npm audit` for details.
-2026-06-21T16:51:06.103659Z	Executing user command: npm install && npm run build
-2026-06-21T16:51:07.130819Z	
-2026-06-21T16:51:07.131095Z	added 1 package, and audited 396 packages in 826ms
-2026-06-21T16:51:07.131176Z	
-2026-06-21T16:51:07.131228Z	102 packages are looking for funding
-2026-06-21T16:51:07.131272Z	  run `npm fund` for details
-2026-06-21T16:51:07.142092Z	
-2026-06-21T16:51:07.142252Z	3 vulnerabilities (2 moderate, 1 high)
-2026-06-21T16:51:07.142364Z	
-2026-06-21T16:51:07.142427Z	To address all issues (including breaking changes), run:
-2026-06-21T16:51:07.142495Z	  npm audit fix --force
-2026-06-21T16:51:07.142539Z	
-2026-06-21T16:51:07.142573Z	Run `npm audit` for details.
-2026-06-21T16:51:07.401664Z	
-2026-06-21T16:51:07.401924Z	> listiq@0.1.0 build
-2026-06-21T16:51:07.402018Z	> vite build
-2026-06-21T16:51:07.403119Z	
-2026-06-21T16:51:07.649992Z	[36mvite v5.4.21 [32mbuilding for production...[36m[39m
-2026-06-21T16:51:07.716622Z	transforming...
-2026-06-21T16:51:07.865276Z	[32m✓[39m 20 modules transformed.
-2026-06-21T16:51:09.72627Z	
-2026-06-21T16:51:09.727836Z	PWA v0.19.8
-2026-06-21T16:51:09.731983Z	mode      generateSW
-2026-06-21T16:51:09.732086Z	precache  3 entries (0.00 KiB)
-2026-06-21T16:51:09.732136Z	files generated
-2026-06-21T16:51:09.732169Z	  dist/sw.js
-2026-06-21T16:51:09.732204Z	  dist/workbox-9c191d2f.js
-2026-06-21T16:51:09.732247Z	warnings
-2026-06-21T16:51:09.732279Z	  One of the glob patterns doesn't match any files. Please remove or fix the following: {
-2026-06-21T16:51:09.73231Z	  "globDirectory": "/opt/buildhome/repo/dist",
-2026-06-21T16:51:09.732344Z	  "globPattern": "**/*.{js,wasm,css,html}",
-2026-06-21T16:51:09.732383Z	  "globIgnores": [
-2026-06-21T16:51:09.732415Z	    "**/node_modules/**/*",
-2026-06-21T16:51:09.732442Z	    "sw.js",
-2026-06-21T16:51:09.732471Z	    "workbox-*.js"
-2026-06-21T16:51:09.732513Z	  ]
-2026-06-21T16:51:09.732558Z	}
-2026-06-21T16:51:09.732586Z	
-2026-06-21T16:51:09.738806Z	[31mx[39m Build failed in 2.06s
-2026-06-21T16:51:09.73906Z	[31merror during build:
-2026-06-21T16:51:09.740579Z	[31m[vite-plugin-pwa:build] [plugin vite-plugin-pwa:build] src/pages/ListPage.jsx: There was an error during the build:
-2026-06-21T16:51:09.740717Z	  Could not resolve "./ListsModal.css" from "src/pages/ListPage.jsx"
-2026-06-21T16:51:09.740782Z	Additionally, handling the error in the 'buildEnd' hook caused the following error:
-2026-06-21T16:51:09.740825Z	  Could not resolve "./ListsModal.css" from "src/pages/ListPage.jsx"[31m
-2026-06-21T16:51:09.740872Z	file: [36m/opt/buildhome/repo/src/pages/ListPage.jsx[31m
-2026-06-21T16:51:09.740925Z	    at getRollupError (file:///opt/buildhome/repo/node_modules/rollup/dist/es/shared/parseAst.js:317:41)
-2026-06-21T16:51:09.740974Z	    at file:///opt/buildhome/repo/node_modules/rollup/dist/es/shared/node-entry.js:23924:39
-2026-06-21T16:51:09.741022Z	    at async catchUnfinishedHookActions (file:///opt/buildhome/repo/node_modules/rollup/dist/es/shared/node-entry.js:23380:16)
-2026-06-21T16:51:09.741078Z	    at async rollupInternal (file:///opt/buildhome/repo/node_modules/rollup/dist/es/shared/node-entry.js:23907:5)
-2026-06-21T16:51:09.741136Z	    at async build (file:///opt/buildhome/repo/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65709:14)
-2026-06-21T16:51:09.741189Z	    at async CAC.<anonymous> (file:///opt/buildhome/repo/node_modules/vite/dist/node/cli.js:829:5)[39m
-2026-06-21T16:51:09.776188Z	Failed: Error while executing user command. Exited with error code: 1
-2026-06-21T16:51:09.781842Z	Failed: build command exited with code: 1
-2026-06-21T16:51:10.409314Z	Failed: error occurred while running build command
+.lists-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.lists-modal {
+  background: #fff;
+  width: 100%;
+  border-radius: 24px 24px 0 0;
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.lists-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 8px;
+}
+
+.lists-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text, #111);
+  margin: 0;
+}
+
+.lists-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.lists-back {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text, #111);
+  padding: 0 4px;
+}
+
+/* ── List items ── */
+.lists-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.lists-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.lists-item--active {
+  background: #f0faf5;
+}
+
+.lists-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lists-item-check {
+  width: 16px;
+  color: #1a9e5c;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.lists-item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text, #111);
+  flex: 1;
+}
+
+.lists-item-shared {
+  font-size: 11px;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.lists-item-actions {
+  display: flex;
+  gap: 4px;
+  padding-right: 12px;
+}
+
+.lists-item-actions button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  opacity: 0.5;
+}
+.lists-item-actions button:active { opacity: 1; }
+
+/* ── Actions ── */
+.lists-actions {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.lists-action-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #111);
+  cursor: pointer;
+  text-align: center;
+}
+.lists-action-btn:active { background: #f5f5f5; }
+
+/* ── Form ── */
+.lists-form {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lists-input {
+  width: 100%;
+  height: 44px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+}
+.lists-input:focus { border-color: #1a9e5c; }
+
+.lists-input--code {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.lists-submit-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #1a9e5c;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lists-submit-btn:disabled { opacity: 0.5; }
+.lists-submit-btn:active { background: #158a4f; }
+
+.lists-error {
+  font-size: 13px;
+  color: #dc2626;
+  text-align: center;
+}
+
+/* ── Invite ── */
+.lists-invite {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.lists-invite-desc {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.lists-invite-code {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #1a9e5c;
+  background: #f0faf5;
+  padding: 16px 32px;
+  border-radius: 14px;
+  border: 2px dashed #1a9e5c;
+}
+
+/* ── Auth wall ── */
+.lists-modal--auth {
+  max-height: 95dvh;
+  overflow-y: auto;
+}
+
+.lists-auth-desc {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  padding: 12px 16px 0;
+  line-height: 1.5;
+}
+
+.lists-modal--auth .auth-page {
+  min-height: unset;
+  background: none;
+  padding: 0;
+}
+
+.lists-modal--auth .auth-card {
+  border: none;
+  box-shadow: none;
+  padding: 16px;
+}
