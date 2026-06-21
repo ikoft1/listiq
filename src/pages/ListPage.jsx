@@ -7,10 +7,11 @@ import StoreRankingModal from '../components/StoreRankingModal'
 import ShoppingCartPage from './ShoppingCartPage'
 import FavouritesModal from '../components/FavouritesModal'
 import OnboardingPage from './OnboardingPage'
+import ListsModal from '../components/ListsModal'
 import './ListPage.css'
 
 export default function ListPage({ onSignOut, user: userProp }) {
-  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user } = useList()
+  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user, lists, listId, listName, inviteCode, createList, switchToList, joinList, renameList, deleteList } = useList()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -27,6 +28,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
   const [refreshToast, setRefreshToast] = useState(null)
   const [showFavourites, setShowFavourites] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [showLists, setShowLists] = useState(false)
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem('listiq_onboarding_done') === 'true'
   })
@@ -184,6 +186,11 @@ export default function ListPage({ onSignOut, user: userProp }) {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
+          {user && (
+            <button className="btn-list-name" onClick={() => setShowLists(true)}>
+              {listName} ▾
+            </button>
+          )}
           <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
             ?
           </button>
@@ -323,6 +330,22 @@ export default function ListPage({ onSignOut, user: userProp }) {
             <OnboardingPage onDone={() => setShowHelp(false)} isModal />
           </div>
         </div>
+      )}
+
+      {showLists && user && (
+        <ListsModal
+          lists={lists}
+          listId={listId}
+          listName={listName}
+          inviteCode={inviteCode}
+          user={user}
+          onSwitch={switchToList}
+          onCreate={createList}
+          onJoin={joinList}
+          onRename={renameList}
+          onDelete={deleteList}
+          onClose={() => setShowLists(false)}
+        />
       )}
 
       {showFavourites && (
