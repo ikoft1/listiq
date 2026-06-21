@@ -17,8 +17,8 @@ export function useList() {
       return []
     }
   })
-  const [listId, setListId] = useState(() => localStorage.getItem(ACTIVE_LIST_KEY) || null)
-  const [listName, setListName] = useState('Λίστα μου')
+  const [listId, setListId] = useState(null)
+  const [listName, setListName] = useState(null)
   const [inviteCode, setInviteCode] = useState(null)
   const [user, setUser] = useState(null)
   const [lists, setLists] = useState([])
@@ -37,26 +37,31 @@ export function useList() {
 
   useEffect(() => {
     if (user && !prevUserRef.current) {
-      // Μόλις έγινε login — αποθήκευσε τα guest items ΑΜΕΣΩΣ
+      // Αποθήκευσε local items πριν φορτώσουμε από Supabase
       const currentItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i && i.name)
       if (currentItems.length > 0) {
         localStorage.setItem(GUEST_ITEMS_KEY, JSON.stringify(currentItems))
-        console.log('Saved guest items for migration:', currentItems.length)
       }
       prevUserRef.current = user
       loadUserLists()
     } else if (!user) {
       prevUserRef.current = null
+      // Guest mode — φόρτωσε από localStorage
       setItems(JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
+      setListId(null)
+      setListName(null)
+      setInviteCode(null)
+      setLists([])
     }
   }, [user])
 
-  // Αποθήκευση στο localStorage μόνο για guests
+  // Αποθήκευση στο localStorage πάντα (για offline χρήση)
   useEffect(() => {
-    if (!user) {
+    if (!listId) {
+      // Αν δεν έχει Supabase λίστα, αποθήκευσε τοπικά
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
     }
-  }, [items, user])
+  }, [items, listId])
 
   // Real-time subscription
   useEffect(() => {
@@ -126,55 +131,56 @@ export function useList() {
 
     setLists(allLists)
 
+    // Αν υπάρχει αποθηκευμένη λίστα → φόρτωσέ την
     const savedListId = localStorage.getItem(ACTIVE_LIST_KEY)
     const activeList = allLists.find(l => l.id === savedListId) || allLists[0]
 
     if (activeList) {
-      // Φόρτωσε την ενεργή λίστα από Supabase
       await switchToList(activeList.id)
     }
     // Αν δεν υπάρχει λίστα → δουλεύει τοπικά, χωρίς αυτόματη δημιουργία
   }
 
-  async function createListInternal(name) {
+  async function createList(name) {
+    if (!user) return null
+
     const code = generateInviteCode()
     const { data } = await supabase
       .from('lists')
       .insert({ user_id: user.id, name, invite_code: code })
       .select('id, name, invite_code')
       .single()
-    if (data) setLists(prev => [...prev, data])
-    return data
-  }
 
-  async function createList(name) {
-    const data = await createListInternal(name)
     if (data) {
-      // Migration: ανέβασε guest items στο Supabase
-      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]')
-        .concat(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
-        .filter((i, idx, arr) => i && i.name && arr.findIndex(x => x.id === i.id) === idx)
+      setLists(prev => [...prev, data])
 
-      if (guestItems.length > 0) {
-        for (const item of guestItems) {
-          await supabase.from('list_items').insert({
-            id: crypto.randomUUID(),
-            list_id: data.id,
-            name: item.name,
-            brand: item.brand || null,
-            quantity: item.quantity || 1,
-            price: item.price || null,
-            store: item.store || null,
-            barcode: item.barcode || null,
-            product_id: item.product_id || null,
-            unit: item.unit || null,
-            unit_quantity: item.unit_quantity || null,
-            checked: item.checked || false,
-          })
-        }
-        localStorage.removeItem(GUEST_ITEMS_KEY)
-        localStorage.removeItem(STORAGE_KEY)
+      // Migration: ανέβασε local items στο Supabase
+      const localItems = [
+        ...JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]'),
+        ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
+      ].filter(i => i && i.name)
+      // Deduplicate
+      const unique = localItems.filter((i, idx, arr) => arr.findIndex(x => x.id === i.id) === idx)
+
+      for (const item of unique) {
+        await supabase.from('list_items').insert({
+          id: crypto.randomUUID(),
+          list_id: data.id,
+          name: item.name,
+          brand: item.brand || null,
+          quantity: item.quantity || 1,
+          price: item.price || null,
+          store: item.store || null,
+          barcode: item.barcode || null,
+          product_id: item.product_id || null,
+          unit: item.unit || null,
+          unit_quantity: item.unit_quantity || null,
+          checked: item.checked || false,
+        })
       }
+
+      localStorage.removeItem(GUEST_ITEMS_KEY)
+      localStorage.removeItem(STORAGE_KEY)
 
       await switchToList(data.id)
     }
@@ -229,13 +235,19 @@ export function useList() {
 
   async function deleteList(id) {
     await supabase.from('lists').delete().eq('id', id)
-    setLists(prev => prev.filter(l => l.id !== id))
+    const remaining = lists.filter(l => l.id !== id)
+    setLists(remaining)
+
     if (id === listId) {
-      const remaining = lists.filter(l => l.id !== id)
       if (remaining.length > 0) {
         await switchToList(remaining[0].id)
       } else {
-        await createList('Λίστα μου')
+        // Επιστροφή σε τοπική λειτουργία — χωρίς αυτόματη δημιουργία
+        setListId(null)
+        setListName(null)
+        setInviteCode(null)
+        localStorage.removeItem(ACTIVE_LIST_KEY)
+        setItems([])
       }
     }
   }
@@ -279,23 +291,23 @@ export function useList() {
   async function toggleItem(id) {
     const item = items.find(i => i.id === id)
     setItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
-    if (user) await supabase.from('list_items').update({ checked: !item.checked }).eq('id', id)
+    if (user && listId) await supabase.from('list_items').update({ checked: !item.checked }).eq('id', id)
   }
 
   async function removeItem(id) {
     setItems(prev => prev.filter(i => i.id !== id))
-    if (user) await supabase.from('list_items').delete().eq('id', id)
+    if (user && listId) await supabase.from('list_items').delete().eq('id', id)
   }
 
   async function updateItem(id, updates) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
-    if (user) await supabase.from('list_items').update(updates).eq('id', id)
+    if (user && listId) await supabase.from('list_items').update(updates).eq('id', id)
   }
 
   async function clearChecked() {
     const checkedIds = items.filter(i => i.checked).map(i => i.id)
     setItems(prev => prev.filter(i => !i.checked))
-    if (user && checkedIds.length) await supabase.from('list_items').delete().in('id', checkedIds)
+    if (user && listId && checkedIds.length) await supabase.from('list_items').delete().in('id', checkedIds)
   }
 
   async function clearAll() {
