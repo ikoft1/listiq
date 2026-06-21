@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const STORAGE_KEY = 'listiq_items'
 const ACTIVE_LIST_KEY = 'listiq_active_list'
+const GUEST_ITEMS_KEY = 'listiq_guest_items'
 
 function generateInviteCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -20,7 +21,7 @@ export function useList() {
   const [listName, setListName] = useState('Λίστα μου')
   const [inviteCode, setInviteCode] = useState(null)
   const [user, setUser] = useState(null)
-  const [lists, setLists] = useState([]) // όλες οι λίστες του χρήστη
+  const [lists, setLists] = useState([])
   const realtimeRef = useRef(null)
 
   useEffect(() => {
@@ -34,25 +35,28 @@ export function useList() {
   }, [])
 
   useEffect(() => {
-    if (user) loadUserLists()
-    else {
-      // Guest mode — χρήση localStorage
+    if (user) {
+      // Αποθήκευσε τα guest items πριν κάνουμε τίποτα
+      const currentItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i.name)
+      if (currentItems.length > 0) {
+        localStorage.setItem(GUEST_ITEMS_KEY, JSON.stringify(currentItems))
+      }
+      loadUserLists()
+    } else {
       setItems(JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
     }
   }, [user])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  }, [items])
+    if (!user) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    }
+  }, [items, user])
 
   // Real-time subscription
   useEffect(() => {
     if (!listId || !user) return
-
-    // Unsubscribe από προηγούμενη subscription
-    if (realtimeRef.current) {
-      realtimeRef.current.unsubscribe()
-    }
+    if (realtimeRef.current) realtimeRef.current.unsubscribe()
 
     const channel = supabase
       .channel(`list_items_${listId}`)
@@ -63,10 +67,9 @@ export function useList() {
         filter: `list_id=eq.${listId}`
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          const newItem = payload.new
           setItems(prev => {
-            if (prev.find(i => i.id === newItem.id)) return prev
-            return [mapDbItem(newItem), ...prev]
+            if (prev.find(i => i.id === payload.new.id)) return prev
+            return [mapDbItem(payload.new), ...prev]
           })
         } else if (payload.eventType === 'UPDATE') {
           setItems(prev => prev.map(i =>
@@ -79,37 +82,28 @@ export function useList() {
       .subscribe()
 
     realtimeRef.current = channel
-
-    return () => {
-      channel.unsubscribe()
-    }
+    return () => channel.unsubscribe()
   }, [listId, user])
 
-  function mapDbItem(i, localItems = []) {
-    const local = localItems.find(l => l.id === i.id) || {}
+  function mapDbItem(i) {
     return {
       id: i.id,
       name: i.name,
-      brand: local.brand || i.brand || null,
+      brand: i.brand || null,
       quantity: i.quantity || 1,
       checked: i.checked,
       price: i.price,
       store: i.store,
       barcode: i.barcode,
-      product_id: local.product_id || i.product_id || null,
-      retailer_prices: local.retailer_prices || [],
-      unit: local.unit || i.unit || null,
-      unit_quantity: local.unit_quantity || i.unit_quantity || null,
-      category_ids: local.category_ids || [],
+      product_id: i.product_id || null,
+      retailer_prices: i.retailer_prices || [],
+      unit: i.unit || null,
+      unit_quantity: i.unit_quantity || null,
+      category_ids: i.category_ids || [],
     }
   }
 
   async function loadUserLists() {
-    // Πάρε τα guest items πριν κάνουμε οτιδήποτε
-    const guestItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      .filter(i => i.name) // μόνο valid items
-
-    // Φόρτωσε λίστες που ανήκουν στον χρήστη ή είναι μέλος
     const { data: ownLists } = await supabase
       .from('lists')
       .select('id, name, invite_code, user_id')
@@ -127,56 +121,62 @@ export function useList() {
 
     setLists(allLists)
 
-    // Φόρτωσε την ενεργή λίστα
     const savedListId = localStorage.getItem(ACTIVE_LIST_KEY)
     const activeList = allLists.find(l => l.id === savedListId) || allLists[0]
 
     let targetListId
     if (activeList) {
-      await switchToList(activeList.id)
       targetListId = activeList.id
     } else {
-      // Δημιούργησε νέα λίστα
-      const newList = await createList('Λίστα μου')
+      const newList = await createListInternal('Λίστα μου')
       targetListId = newList?.id
     }
 
-    // Migration: μεταφορά guest items στο Supabase
-    if (guestItems.length > 0 && targetListId) {
-      for (const item of guestItems) {
-        const newId = crypto.randomUUID()
-        await supabase.from('list_items').insert({
-          id: newId,
-          list_id: targetListId,
-          name: item.name,
-          brand: item.brand || null,
-          quantity: item.quantity || 1,
-          price: item.price || null,
-          store: item.store || null,
-          barcode: item.barcode || null,
-          product_id: item.product_id || null,
-          unit: item.unit || null,
-          unit_quantity: item.unit_quantity || null,
-          checked: item.checked || false,
-        })
+    if (targetListId) {
+      // Πρώτα κάνε migration των guest items
+      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]').filter(i => i.name)
+      
+      if (guestItems.length > 0) {
+        // Ανέβασε τα guest items στο Supabase
+        for (const item of guestItems) {
+          await supabase.from('list_items').insert({
+            id: crypto.randomUUID(),
+            list_id: targetListId,
+            name: item.name,
+            brand: item.brand || null,
+            quantity: item.quantity || 1,
+            price: item.price || null,
+            store: item.store || null,
+            barcode: item.barcode || null,
+            product_id: item.product_id || null,
+            unit: item.unit || null,
+            unit_quantity: item.unit_quantity || null,
+            checked: item.checked || false,
+          })
+        }
+        localStorage.removeItem(GUEST_ITEMS_KEY)
       }
-      // Ξαναφόρτωσε τα items από Supabase
+
+      // Μετά φόρτωσε τα items από Supabase
       await switchToList(targetListId)
     }
   }
 
-  async function createList(name) {
+  // Internal version για χρήση εντός του hook
+  async function createListInternal(name) {
     const code = generateInviteCode()
     const { data } = await supabase
       .from('lists')
       .insert({ user_id: user.id, name, invite_code: code })
       .select('id, name, invite_code')
       .single()
+    if (data) setLists(prev => [...prev, data])
+    return data
+  }
 
-    if (data) {
-      setLists(prev => [...prev, data])
-      await switchToList(data.id)
-    }
+  async function createList(name) {
+    const data = await createListInternal(name)
+    if (data) await switchToList(data.id)
     return data
   }
 
@@ -184,7 +184,6 @@ export function useList() {
     setListId(id)
     localStorage.setItem(ACTIVE_LIST_KEY, id)
 
-    // Φόρτωσε info λίστας
     const { data: listData } = await supabase
       .from('lists')
       .select('name, invite_code')
@@ -196,38 +195,26 @@ export function useList() {
       setInviteCode(listData.invite_code)
     }
 
-    // Φόρτωσε items
-    const localItems = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
     const { data: dbItems } = await supabase
       .from('list_items')
       .select('*')
       .eq('list_id', id)
       .order('created_at', { ascending: false })
 
-    if (dbItems) {
-      setItems(dbItems.map(i => mapDbItem(i, localItems)))
-    } else {
-      setItems([])
-    }
+    setItems(dbItems ? dbItems.map(mapDbItem) : [])
   }
 
-  async function joinList(inviteCode) {
-    // Βρες τη λίστα με τον κωδικό
+  async function joinList(code) {
     const { data: list } = await supabase
       .from('lists')
       .select('id, name, invite_code, user_id')
-      .eq('invite_code', inviteCode.toUpperCase())
+      .eq('invite_code', code.toUpperCase())
       .single()
 
     if (!list) return { error: 'Δεν βρέθηκε λίστα με αυτόν τον κωδικό' }
     if (list.user_id === user.id) return { error: 'Αυτή είναι η δική σου λίστα' }
 
-    // Πρόσθεσε ως μέλος
-    await supabase.from('list_members').upsert({
-      list_id: list.id,
-      user_id: user.id
-    })
-
+    await supabase.from('list_members').upsert({ list_id: list.id, user_id: user.id })
     setLists(prev => [...prev.filter(l => l.id !== list.id), list])
     await switchToList(list.id)
     return { success: true, list }
@@ -291,38 +278,28 @@ export function useList() {
   async function toggleItem(id) {
     const item = items.find(i => i.id === id)
     setItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
-    if (user) {
-      await supabase.from('list_items').update({ checked: !item.checked }).eq('id', id)
-    }
+    if (user) await supabase.from('list_items').update({ checked: !item.checked }).eq('id', id)
   }
 
   async function removeItem(id) {
     setItems(prev => prev.filter(i => i.id !== id))
-    if (user) {
-      await supabase.from('list_items').delete().eq('id', id)
-    }
+    if (user) await supabase.from('list_items').delete().eq('id', id)
   }
 
   async function updateItem(id, updates) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
-    if (user) {
-      await supabase.from('list_items').update(updates).eq('id', id)
-    }
+    if (user) await supabase.from('list_items').update(updates).eq('id', id)
   }
 
   async function clearChecked() {
     const checkedIds = items.filter(i => i.checked).map(i => i.id)
     setItems(prev => prev.filter(i => !i.checked))
-    if (user && checkedIds.length) {
-      await supabase.from('list_items').delete().in('id', checkedIds)
-    }
+    if (user && checkedIds.length) await supabase.from('list_items').delete().in('id', checkedIds)
   }
 
   async function clearAll() {
     setItems([])
-    if (user && listId) {
-      await supabase.from('list_items').delete().eq('list_id', listId)
-    }
+    if (user && listId) await supabase.from('list_items').delete().eq('list_id', listId)
   }
 
   const total = items
@@ -334,7 +311,6 @@ export function useList() {
   return {
     items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll,
     total, checkedCount, user,
-    // Multi-list
     lists, listId, listName, inviteCode,
     createList, switchToList, joinList, renameList, deleteList,
   }
