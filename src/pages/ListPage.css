@@ -314,3 +314,20 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ── List name button ── */
+.btn-list-name {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.btn-list-name:active { background: var(--gray-50); }
