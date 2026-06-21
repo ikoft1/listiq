@@ -9,8 +9,8 @@ import FavouritesModal from '../components/FavouritesModal'
 import OnboardingPage from './OnboardingPage'
 import './ListPage.css'
 
-export default function ListPage() {
-  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount } = useList()
+export default function ListPage({ onSignOut, user: userProp }) {
+  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user } = useList()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -187,6 +187,14 @@ export default function ListPage() {
           <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
             ?
           </button>
+          {user && (
+            <button className="btn-user" onClick={onSignOut} title={user.email} aria-label="Αποσύνδεση">
+              {user.user_metadata?.avatar_url
+                ? <img src={user.user_metadata.avatar_url} className="user-avatar" alt="avatar" />
+                : <span className="user-initials">{(user.email || '?')[0].toUpperCase()}</span>
+              }
+            </button>
+          )}
           <button
             className="btn-refresh"
             onClick={handleRefreshPrices}
@@ -296,14 +304,9 @@ export default function ListPage() {
       </main>
 
       <footer className="donate-footer">
-        <a href="https://paypal.me/IOANNISKOFTERIDIS" target="_blank" rel="noopener noreferrer" className="donate-btn">
+        <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
-        <div className="footer-links">
-          <a href="/privacy.html" target="_blank">Πολιτική Απορρήτου</a>
-          <span>·</span>
-          <a href="/terms.html" target="_blank">Όροι Χρήσης</a>
-        </div>
       </footer>
 
       {selectedProduct && (
