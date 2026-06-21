@@ -2,11 +2,22 @@ import AuthPage from '../pages/AuthPage'
 import { useState } from 'react'
 import './ListsModal.css'
 
+const STORAGE_KEY = 'listiq_items'
+const GUEST_ITEMS_KEY = 'listiq_guest_items'
+
+function saveGuestItems() {
+  const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i && i.name)
+  if (items.length > 0) {
+    localStorage.setItem(GUEST_ITEMS_KEY, JSON.stringify(items))
+    console.log('Saved guest items before login:', items.length)
+  }
+}
+
 export default function ListsModal({
   lists, listId, listName, inviteCode, user,
   onSwitch, onCreate, onJoin, onRename, onDelete, onClose, autoShowInvite
 }) {
-  const [view, setView] = useState(autoShowInvite ? 'invite' : 'main') // main | new | join | invite | rename
+  const [view, setView] = useState(autoShowInvite ? 'invite' : 'main')
   const [newName, setNewName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [renameId, setRenameId] = useState(null)
@@ -67,11 +78,14 @@ export default function ListsModal({
       <div className="lists-overlay" onClick={onClose}>
         <div className="lists-modal lists-modal--auth" onClick={e => e.stopPropagation()}>
           <div className="lists-header">
-            <h2 className="lists-title">Σύνδεση απαιτείται</h2>
+            <h2 className="lists-title">Αποθήκευση λίστας</h2>
             <button className="lists-close" onClick={onClose}>✕</button>
           </div>
           <p className="lists-auth-desc">Συνδέσου για να αποθηκεύσεις και να κοινοποιήσεις τη λίστα σου.</p>
-          <AuthPage onGuest={onClose} />
+          <AuthPage
+            onGuest={onClose}
+            onBeforeLogin={saveGuestItems}
+          />
         </div>
       </div>
     )
@@ -81,14 +95,12 @@ export default function ListsModal({
     <div className="lists-overlay" onClick={onClose}>
       <div className="lists-modal" onClick={e => e.stopPropagation()}>
 
-        {/* ── Main view ── */}
         {view === 'main' && (
           <>
             <div className="lists-header">
               <h2 className="lists-title">Οι λίστες μου</h2>
               <button className="lists-close" onClick={onClose}>✕</button>
             </div>
-
             <div className="lists-list">
               {lists.map(l => (
                 <div key={l.id} className={`lists-item ${l.id === listId ? 'lists-item--active' : ''}`}>
@@ -106,22 +118,14 @@ export default function ListsModal({
                 </div>
               ))}
             </div>
-
             <div className="lists-actions">
-              <button className="lists-action-btn" onClick={() => setView('new')}>
-                + Νέα λίστα
-              </button>
-              <button className="lists-action-btn" onClick={() => setView('invite')}>
-                🔗 Κοινοποίηση κωδικού
-              </button>
-              <button className="lists-action-btn" onClick={() => setView('join')}>
-                📥 Συμμετοχή σε λίστα
-              </button>
+              <button className="lists-action-btn" onClick={() => setView('new')}>+ Νέα λίστα</button>
+              <button className="lists-action-btn" onClick={() => setView('invite')}>🔗 Κοινοποίηση κωδικού</button>
+              <button className="lists-action-btn" onClick={() => setView('join')}>📥 Συμμετοχή σε λίστα</button>
             </div>
           </>
         )}
 
-        {/* ── New list ── */}
         {view === 'new' && (
           <>
             <div className="lists-header">
@@ -130,13 +134,7 @@ export default function ListsModal({
               <button className="lists-close" onClick={onClose}>✕</button>
             </div>
             <div className="lists-form">
-              <input
-                className="lists-input"
-                placeholder="Όνομα λίστας..."
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                autoFocus
-              />
+              <input className="lists-input" placeholder="Όνομα λίστας..." value={newName} onChange={e => setNewName(e.target.value)} autoFocus />
               <button className="lists-submit-btn" onClick={handleCreate} disabled={loading || !newName.trim()}>
                 {loading ? '...' : 'Δημιουργία'}
               </button>
@@ -144,7 +142,6 @@ export default function ListsModal({
           </>
         )}
 
-        {/* ── Invite code ── */}
         {view === 'invite' && (
           <>
             <div className="lists-header">
@@ -155,9 +152,7 @@ export default function ListsModal({
             <div className="lists-invite">
               <p className="lists-invite-desc">Στείλε αυτόν τον κωδικό για να δει κάποιος την λίστα <strong>"{listName}"</strong>:</p>
               <div className="lists-invite-code">{inviteCode}</div>
-              <button className="lists-submit-btn" onClick={handleShare}>
-                📤 Κοινοποίηση
-              </button>
+              <button className="lists-submit-btn" onClick={handleShare}>📤 Κοινοποίηση</button>
               <button className="lists-action-btn" onClick={handleCopyCode}>
                 {copied ? '✅ Αντιγράφηκε!' : '📋 Αντιγραφή κωδικού'}
               </button>
@@ -165,7 +160,6 @@ export default function ListsModal({
           </>
         )}
 
-        {/* ── Join list ── */}
         {view === 'join' && (
           <>
             <div className="lists-header">
@@ -191,7 +185,6 @@ export default function ListsModal({
           </>
         )}
 
-        {/* ── Rename ── */}
         {view === 'rename' && (
           <>
             <div className="lists-header">
@@ -200,12 +193,7 @@ export default function ListsModal({
               <button className="lists-close" onClick={onClose}>✕</button>
             </div>
             <div className="lists-form">
-              <input
-                className="lists-input"
-                value={renameName}
-                onChange={e => setRenameName(e.target.value)}
-                autoFocus
-              />
+              <input className="lists-input" value={renameName} onChange={e => setRenameName(e.target.value)} autoFocus />
               <button className="lists-submit-btn" onClick={handleRename} disabled={loading || !renameName.trim()}>
                 {loading ? '...' : 'Αποθήκευση'}
               </button>
