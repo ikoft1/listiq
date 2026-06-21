@@ -105,6 +105,10 @@ export function useList() {
   }
 
   async function loadUserLists() {
+    // Πάρε τα guest items πριν κάνουμε οτιδήποτε
+    const guestItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+      .filter(i => i.name) // μόνο valid items
+
     // Φόρτωσε λίστες που ανήκουν στον χρήστη ή είναι μέλος
     const { data: ownLists } = await supabase
       .from('lists')
@@ -127,11 +131,37 @@ export function useList() {
     const savedListId = localStorage.getItem(ACTIVE_LIST_KEY)
     const activeList = allLists.find(l => l.id === savedListId) || allLists[0]
 
+    let targetListId
     if (activeList) {
       await switchToList(activeList.id)
+      targetListId = activeList.id
     } else {
       // Δημιούργησε νέα λίστα
-      await createList('Λίστα μου')
+      const newList = await createList('Λίστα μου')
+      targetListId = newList?.id
+    }
+
+    // Migration: μεταφορά guest items στο Supabase
+    if (guestItems.length > 0 && targetListId) {
+      for (const item of guestItems) {
+        const newId = crypto.randomUUID()
+        await supabase.from('list_items').insert({
+          id: newId,
+          list_id: targetListId,
+          name: item.name,
+          brand: item.brand || null,
+          quantity: item.quantity || 1,
+          price: item.price || null,
+          store: item.store || null,
+          barcode: item.barcode || null,
+          product_id: item.product_id || null,
+          unit: item.unit || null,
+          unit_quantity: item.unit_quantity || null,
+          checked: item.checked || false,
+        })
+      }
+      // Ξαναφόρτωσε τα items από Supabase
+      await switchToList(targetListId)
     }
   }
 
