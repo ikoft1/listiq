@@ -29,6 +29,7 @@ export default function ListPage({ onSignOut }) {
   const [showHelp, setShowHelp] = useState(false)
   const [showLists, setShowLists] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [autoShowInvite, setAutoShowInvite] = useState(false)
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem('listiq_onboarding_done') === 'true'
   })
@@ -157,10 +158,10 @@ export default function ListPage({ onSignOut }) {
   // Save guest items πριν το login
   function handleSaveList() {
     if (!user) {
-      // Αποθήκευσε τα τρέχοντα items ως guest items
-      localStorage.setItem('listiq_guest_items', JSON.stringify(items))
+      setAutoShowInvite(true)
       setShowLists(true)
     } else {
+      setAutoShowInvite(false)
       setShowLists(true)
     }
   }
@@ -221,10 +222,10 @@ export default function ListPage({ onSignOut }) {
               {showUserMenu && (
                 <div className="user-menu">
                   <div className="user-menu-email">{user.email}</div>
-                 <button className="user-menu-item" onClick={() => { setShowUserMenu(false); setShowLists(true) }}>
+                  <button className="user-menu-item" onMouseDown={() => { setShowUserMenu(false); setShowLists(true) }}>
                     📋 Οι λίστες μου
                   </button>
-                <button className="user-menu-item user-menu-item--danger" onClick={() => { setShowUserMenu(false); onSignOut() }}>
+                  <button className="user-menu-item user-menu-item--danger" onMouseDown={() => { setShowUserMenu(false); onSignOut() }}>
                     🚪 Αποσύνδεση
                   </button>
                 </div>
@@ -353,7 +354,8 @@ export default function ListPage({ onSignOut }) {
           onJoin={joinList}
           onRename={renameList}
           onDelete={deleteList}
-          onClose={() => setShowLists(false)}
+          onClose={() => { setShowLists(false); setAutoShowInvite(false) }}
+          autoShowInvite={autoShowInvite && !!user}
         />
       )}
 
