@@ -20,6 +20,7 @@ export default function App() {
 
 async function handleSignOut() {
   await supabase.auth.signOut()
+  localStorage.removeItem('listiq_active_list')
   window.location.reload()
 }
 
