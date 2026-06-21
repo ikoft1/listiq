@@ -1,3 +1,4 @@
+import AuthPage from '../pages/AuthPage'
 import { useState } from 'react'
 import './ListsModal.css'
 
@@ -58,6 +59,22 @@ export default function ListsModal({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  // Αν δεν είναι logged in → εμφάνισε login
+  if (!user) {
+    return (
+      <div className="lists-overlay" onClick={onClose}>
+        <div className="lists-modal lists-modal--auth" onClick={e => e.stopPropagation()}>
+          <div className="lists-header">
+            <h2 className="lists-title">Σύνδεση απαιτείται</h2>
+            <button className="lists-close" onClick={onClose}>✕</button>
+          </div>
+          <p className="lists-auth-desc">Συνδέσου για να αποθηκεύσεις και να κοινοποιήσεις τη λίστα σου.</p>
+          <AuthPage onGuest={onClose} />
+        </div>
+      </div>
+    )
   }
 
   return (
