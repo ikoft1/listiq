@@ -176,7 +176,6 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
 
   const [cartItems, setCartItems] = useState(merged)
   const [flash, setFlash] = useState(null)
-  const [editingItem, setEditingItem] = useState(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [favouritesSaved, setFavouritesSaved] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -222,21 +221,16 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
     setSearchResults([])
   }
 
-  function toggleItem(id) {
-    setCartItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
-  }
-
-  function handleLongPress(item) {
-    setEditingItem(item)
-  }
-
-  function handleSavePrice(price) {
+  function handleInlinePrice(id, price) {
     setCartItems(prev => prev.map(i =>
-      i.id === editingItem.id
+      i.id === id
         ? { ...i, shelfPrice: price, checked: price != null ? true : i.checked }
         : i
     ))
-    setEditingItem(null)
+  }
+
+  function toggleItem(id) {
+    setCartItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i))
   }
 
   function showFlash(data) {
@@ -308,7 +302,7 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
                 key={item.id}
                 item={item}
                 onToggle={toggleItem}
-                onLongPress={handleLongPress}
+                onSavePrice={handleInlinePrice}
               />
             ))}
           </div>
@@ -325,7 +319,7 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
                     key={item.id}
                     item={item}
                     onToggle={toggleItem}
-                    onLongPress={handleLongPress}
+                    onSavePrice={handleInlinePrice}
                   />
                 ))}
               </div>
@@ -366,7 +360,7 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
           </div>
         </div>
         {checkedItems.length === 0 && (
-          <div className="cart-footer-hint">Tick ή σκανάρισε προϊόντα • Πάτα ✏️ για τιμή ραφιού</div>
+          <div className="cart-footer-hint">Tick προϊόντα • Πρόσθεσε τιμή ραφιού</div>
         )}
         {checkedItems.length > 0 && (
           <button className="cart-done-btn" onClick={() => setShowCheckout(true)}>
@@ -374,15 +368,6 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
           </button>
         )}
       </footer>
-
-      {/* Numpad modal */}
-      {editingItem && (
-        <PriceInputModal
-          item={editingItem}
-          onSave={handleSavePrice}
-          onClose={() => setEditingItem(null)}
-        />
-      )}
 
       {showCheckout && (
         <CheckoutModal
@@ -400,15 +385,34 @@ export default function ShoppingCartPage({ store, storeItems, allListItems, onCl
   )
 }
 
-function CartItem({ item, onToggle, onLongPress }) {
-  // Πλήρες όνομα: name (ήδη περιέχει brand) + unit_quantity + unit
-  const fullName = [
-    item.name,
-    item.unit_quantity,
-    item.unit,
-  ].filter(Boolean).join(' ')
-
+function CartItem({ item, onToggle, onSavePrice }) {
+  const fullName = [item.name, item.unit_quantity, item.unit].filter(Boolean).join(' ')
   const quantity = item.quantity || 1
+  const [priceInput, setPriceInput] = useState(
+    item.shelfPrice != null ? String(item.shelfPrice) : ''
+  )
+
+  function handlePriceBlur() {
+    const num = parseFloat(priceInput)
+    if (!isNaN(num) && num > 0) {
+      onSavePrice(item.id, num)
+    } else if (priceInput === '') {
+      onSavePrice(item.id, null)
+    }
+  }
+
+  function handlePriceChange(e) {
+    const val = e.target.value
+    if (/^\d*\.?\d{0,2}$/.test(val)) {
+      setPriceInput(val)
+    }
+  }
+
+  function handlePriceKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.target.blur()
+    }
+  }
 
   return (
     <div className={`cart-item ${item.checked ? 'cart-item--checked' : ''}`}>
@@ -435,9 +439,18 @@ function CartItem({ item, onToggle, onLongPress }) {
           </div>
         </div>
       </button>
-      <button className="cart-item-edit" onClick={() => onLongPress(item)} aria-label="Τιμή ραφιού">
-        ✏️
-      </button>
+      <div className="cart-item-price-input-wrap" onClick={e => e.stopPropagation()}>
+        <input
+          className="cart-item-price-input"
+          type="number"
+          inputMode="decimal"
+          placeholder="Τιμή ραφιού"
+          value={priceInput}
+          onChange={handlePriceChange}
+          onBlur={handlePriceBlur}
+          onKeyDown={handlePriceKeyDown}
+        />
+      </div>
     </div>
   )
 }
