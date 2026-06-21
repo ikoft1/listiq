@@ -1,369 +1,218 @@
-import { useState, useEffect, useRef } from 'react'
-import { useList } from '../hooks/useList'
-import { searchProducts, findBestStores, refreshItemPrices } from '../lib/api'
-import ListItem from '../components/ListItem'
-import PriceModal from '../components/PriceModal'
-import StoreRankingModal from '../components/StoreRankingModal'
-import ShoppingCartPage from './ShoppingCartPage'
-import FavouritesModal from '../components/FavouritesModal'
-import OnboardingPage from './OnboardingPage'
-import ListsModal from '../components/ListsModal'
-import './ListPage.css'
+import AuthPage from '../pages/AuthPage'
+import { useState } from 'react'
+import './ListsModal.css'
 
-export default function ListPage({ onSignOut, user: userProp }) {
-  const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user, lists, listId, listName, inviteCode, createList, switchToList, joinList, renameList, deleteList } = useList()
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasNext, setHasNext] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [noResults, setNoResults] = useState(false)
-  const [storeRanking, setStoreRanking] = useState(null)
-  const [findingStores, setFindingStores] = useState(false)
+export default function ListsModal({
+  lists, listId, listName, inviteCode, user,
+  onSwitch, onCreate, onJoin, onRename, onDelete, onClose
+}) {
+  const [view, setView] = useState('main') // main | new | join | invite | rename
+  const [newName, setNewName] = useState('')
+  const [joinCode, setJoinCode] = useState('')
+  const [renameId, setRenameId] = useState(null)
+  const [renameName, setRenameName] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  const [shoppingCart, setShoppingCart] = useState(null)
-  const [refreshing, setRefreshing] = useState(false)
-  const [refreshToast, setRefreshToast] = useState(null)
-  const [showFavourites, setShowFavourites] = useState(false)
-  const [showHelp, setShowHelp] = useState(false)
-  const [showLists, setShowLists] = useState(false)
-  const [onboardingDone, setOnboardingDone] = useState(() => {
-    return localStorage.getItem('listiq_onboarding_done') === 'true'
-  })
+  async function handleCreate() {
+    if (!newName.trim()) return
+    setLoading(true)
+    await onCreate(newName.trim())
+    setLoading(false)
+    onClose()
+  }
 
-  const debounceRef = useRef(null)
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!query.trim() || query.trim().length < 3) {
-      setResults([])
-      setNoResults(false)
-      return
+  async function handleJoin() {
+    if (!joinCode.trim()) return
+    setLoading(true)
+    setError(null)
+    const result = await onJoin(joinCode.trim())
+    setLoading(false)
+    if (result?.error) {
+      setError(result.error)
+    } else {
+      onClose()
     }
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true)
-      setResults([])
-      setNoResults(false)
-      setCurrentPage(1)
-      setHasNext(false)
-      try {
-        const { products, hasNext: next } = await searchProducts(query, 1)
-        if (products && products.length > 0) {
-          setResults(products)
-          setHasNext(next)
-        } else {
-          setNoResults(true)
-        }
-      } catch {
-        setNoResults(true)
-      }
-      setSearching(false)
-    }, 500)
-    return () => clearTimeout(debounceRef.current)
-  }, [query])
-
-  async function handleFindBestStores() {
-    setFindingStores(true)
-    const activeItems = items.filter(i => !i.checked)
-    const stores = await findBestStores(activeItems)
-    setStoreRanking(stores)
-    setFindingStores(false)
   }
 
-  async function handleRefreshPrices() {
-    setRefreshing(true)
-    const updated = await refreshItemPrices(items)
-    let changedCount = 0
-    updated.forEach(item => {
-      const original = items.find(i => i.id === item.id)
-      if (original && (
-        original.price !== item.price ||
-        JSON.stringify(original.retailer_prices) !== JSON.stringify(item.retailer_prices)
-      )) {
-        updateItem(item.id, {
-          price: item.price,
-          retailer_prices: item.retailer_prices,
-        })
-        changedCount++
-      }
-    })
-    setRefreshing(false)
-    setRefreshToast(changedCount > 0
-      ? `✅ Ανανεώθηκαν ${changedCount} τιμές`
-      : '✅ Οι τιμές είναι ενημερωμένες'
-    )
-    setTimeout(() => setRefreshToast(null), 3000)
+  async function handleRename() {
+    if (!renameName.trim()) return
+    setLoading(true)
+    await onRename(renameId, renameName.trim())
+    setLoading(false)
+    setView('main')
   }
 
-  async function loadMore() {
-    setLoadingMore(true)
-    const nextPage = currentPage + 1
-    try {
-      const { products, hasNext: next } = await searchProducts(query, nextPage)
-      setResults(prev => [...prev, ...products])
-      setCurrentPage(nextPage)
-      setHasNext(next)
-    } catch {}
-    setLoadingMore(false)
-  }
-
-  function handleAddResult(product) {
-    addItem({
-      ...product,
-      name: `${product.brand} ${product.name}`.trim(),
-    })
-    setResults([])
-    setQuery('')
-    setSelectedProduct(null)
-    setNoResults(false)
-  }
-
-  function handleAddManual() {
-    if (!query.trim()) return
-    addItem({ name: query })
-    setQuery('')
-    setResults([])
-    setNoResults(false)
-  }
-
-  function handleStartShopping(store) {
-    setShoppingCart({ store, storeItems: store.items })
-    setStoreRanking(null)
+  function handleCopyCode() {
+    navigator.clipboard.writeText(inviteCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   function handleShare() {
-    const activeItems = items.filter(i => !i.checked)
-    if (!activeItems.length) return
-
-    const lines = activeItems.map(i => {
-      const price = i.price ? ` ~€${i.price.toFixed(2)}` : ''
-      return `• ${i.name}${price}`
-    })
-
-    const totalPrice = activeItems.filter(i => i.price).reduce((sum, i) => sum + i.price, 0)
-    const totalLine = totalPrice > 0 ? `
-Σύνολο: ~€${totalPrice.toFixed(2)}` : ''
-
-    const text = `🛒 Λίστα αγορών\n\n${lines.join('\n')}${totalLine}\n\ngolistiq.com`
-
+    const text = `Γεια! Σε προσκαλώ στη λίστα αγορών μου "${listName}" στο Listiq.\n\nΚωδικός: ${inviteCode}\n\ngolistiq.com`
     if (navigator.share) {
-      navigator.share({ title: 'Λίστα αγορών - Listiq', text })
+      navigator.share({ title: 'Πρόσκληση Listiq', text })
     } else {
       navigator.clipboard.writeText(text)
-      setRefreshToast('✅ Αντιγράφηκε στο clipboard!')
-      setTimeout(() => setRefreshToast(null), 3000)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
-  if (!onboardingDone) {
+  // Αν δεν είναι logged in → εμφάνισε login
+  if (!user) {
     return (
-      <OnboardingPage onDone={() => {
-        localStorage.setItem('listiq_onboarding_done', 'true')
-        setOnboardingDone(true)
-      }} />
+      <div className="lists-overlay" onClick={onClose}>
+        <div className="lists-modal lists-modal--auth" onClick={e => e.stopPropagation()}>
+          <div className="lists-header">
+            <h2 className="lists-title">Σύνδεση απαιτείται</h2>
+            <button className="lists-close" onClick={onClose}>✕</button>
+          </div>
+          <p className="lists-auth-desc">Συνδέσου για να αποθηκεύσεις και να κοινοποιήσεις τη λίστα σου.</p>
+          <AuthPage onGuest={onClose} />
+        </div>
+      </div>
     )
   }
-
-  if (shoppingCart) {
-    return (
-      <ShoppingCartPage
-        store={shoppingCart.store}
-        storeItems={shoppingCart.storeItems}
-        allListItems={items.filter(i => !i.checked)}
-        onClose={() => setShoppingCart(null)}
-        onNewList={() => { clearAll(); setShoppingCart(null); }}
-      />
-    )
-  }
-
-  const unchecked = items.filter(i => !i.checked)
-  const checked = items.filter(i => i.checked)
 
   return (
-    <div className="list-page">
-      <header className="list-header">
-        <div className="header-top">
-          <h1 className="logo">Listiq</h1>
-          {user && (
-            <button className="btn-list-name" onClick={() => setShowLists(true)}>
-              {listName} ▾
-            </button>
-          )}
-          <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
-            ?
-          </button>
-          {user && (
-            <button className="btn-user" onClick={onSignOut} title={user.email} aria-label="Αποσύνδεση">
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} className="user-avatar" alt="avatar" />
-                : <span className="user-initials">{(user.email || '?')[0].toUpperCase()}</span>
-              }
-            </button>
-          )}
-          <button
-            className="btn-refresh"
-            onClick={handleRefreshPrices}
-            disabled={refreshing}
-            aria-label="Ανανέωση τιμών"
-          >
-            {refreshing ? '⏳' : '🔄'}
-          </button>
-          <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
-            ⭐
-          </button>
-          {items.filter(i => !i.checked).length > 0 && (
-            <button className="btn-share" onClick={handleShare} aria-label="Κοινοποίηση">
-              📤
-            </button>
-          )}
-          {checkedCount > 0 && (
-            <div className="total-badge">
-              {total > 0 ? `€${total.toFixed(2)}` : `${checkedCount} ✓`}
-            </div>
-          )}
-        </div>
+    <div className="lists-overlay" onClick={onClose}>
+      <div className="lists-modal" onClick={e => e.stopPropagation()}>
 
-        {refreshToast && (
-          <div className="refresh-toast">{refreshToast}</div>
-        )}
-
-        <form className="search-form" onSubmit={e => { e.preventDefault(); handleAddManual() }}>
-          <input
-            className="search-input"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setNoResults(false) }}
-            placeholder="Προσθήκη προϊόντος..."
-            autoComplete="off"
-          />
-          <button type="submit" className="btn-search" disabled={searching}>
-            {searching ? '...' : '+'}
-          </button>
-        </form>
-
-        {results.length > 0 && (
-          <div className="search-results">
-            {results.map(r => (
-              <button key={r.id} className="result-row" onClick={() => handleAddResult(r)}>
-                <div className="result-info">
-                  <span className="result-name">{r.brand} {r.name}</span>
-                </div>
-                {r.price && <span className="result-price">από €{r.price?.toFixed(2)}</span>}
-              </button>
-            ))}
-            {hasNext && (
-              <button className="result-row result-loadmore" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? '...' : '↓ Περισσότερα αποτελέσματα'}
-              </button>
-            )}
-            <button className="result-row result-manual" onClick={handleAddManual}>
-              + Προσθήκη "{query}" χωρίς τιμή
-            </button>
-          </div>
-        )}
-
-        {noResults && (
-          <div className="search-results">
-            <div className="result-row" style={{ color: 'var(--text-secondary)', cursor: 'default' }}>
-              Δεν βρέθηκαν αποτελέσματα για "{query}"
-            </div>
-            <button className="result-row result-manual" onClick={handleAddManual}>
-              + Προσθήκη "{query}" χωρίς τιμή
-            </button>
-          </div>
-        )}
-      </header>
-
-      <main className="list-main">
-        {items.length === 0 && (
-          <div className="empty-state">
-            <p>Η λίστα σου είναι άδεια</p>
-            <p>Πρόσθεσε προϊόντα με αναζήτηση</p>
-          </div>
-        )}
-
-        {unchecked.map(item => (
-          <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} onUpdateQuantity={(id, qty) => updateItem(id, { quantity: qty })} />
-        ))}
-
-        {unchecked.length >= 2 && (
-          <button
-            className="btn-find-stores"
-            onClick={handleFindBestStores}
-            disabled={findingStores}
-          >
-            {findingStores ? '⏳ Ψάχνω τιμές...' : '🛒 Βρες καλύτερο SM'}
-          </button>
-        )}
-
-        {checked.length > 0 && (
+        {/* ── Main view ── */}
+        {view === 'main' && (
           <>
-            <div className="checked-divider">
-              <span>Αγοράστηκαν ({checked.length})</span>
-              <button onClick={clearChecked} className="btn-clear">Καθαρισμός</button>
+            <div className="lists-header">
+              <h2 className="lists-title">Οι λίστες μου</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
             </div>
-            {checked.map(item => (
-              <ListItem key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
-            ))}
+
+            <div className="lists-list">
+              {lists.map(l => (
+                <div key={l.id} className={`lists-item ${l.id === listId ? 'lists-item--active' : ''}`}>
+                  <button className="lists-item-main" onClick={() => { onSwitch(l.id); onClose() }}>
+                    <span className="lists-item-check">{l.id === listId ? '✓' : ''}</span>
+                    <span className="lists-item-name">{l.name}</span>
+                    {l.user_id !== user?.id && <span className="lists-item-shared">κοινή</span>}
+                  </button>
+                  <div className="lists-item-actions">
+                    <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
+                    {lists.length > 1 && l.user_id === user?.id && (
+                      <button onClick={() => onDelete(l.id)}>🗑️</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="lists-actions">
+              <button className="lists-action-btn" onClick={() => setView('new')}>
+                + Νέα λίστα
+              </button>
+              <button className="lists-action-btn" onClick={() => setView('invite')}>
+                🔗 Κοινοποίηση κωδικού
+              </button>
+              <button className="lists-action-btn" onClick={() => setView('join')}>
+                📥 Συμμετοχή σε λίστα
+              </button>
+            </div>
           </>
         )}
-      </main>
 
-      <footer className="donate-footer">
-        <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
-          ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
-        </a>
-      </footer>
+        {/* ── New list ── */}
+        {view === 'new' && (
+          <>
+            <div className="lists-header">
+              <button className="lists-back" onClick={() => setView('main')}>←</button>
+              <h2 className="lists-title">Νέα λίστα</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="lists-form">
+              <input
+                className="lists-input"
+                placeholder="Όνομα λίστας..."
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                autoFocus
+              />
+              <button className="lists-submit-btn" onClick={handleCreate} disabled={loading || !newName.trim()}>
+                {loading ? '...' : 'Δημιουργία'}
+              </button>
+            </div>
+          </>
+        )}
 
-      {selectedProduct && (
-        <PriceModal
-          product={selectedProduct}
-          onAdd={handleAddResult}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+        {/* ── Invite code ── */}
+        {view === 'invite' && (
+          <>
+            <div className="lists-header">
+              <button className="lists-back" onClick={() => setView('main')}>←</button>
+              <h2 className="lists-title">Κοινοποίηση</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="lists-invite">
+              <p className="lists-invite-desc">Στείλε αυτόν τον κωδικό για να δει κάποιος την λίστα <strong>"{listName}"</strong>:</p>
+              <div className="lists-invite-code">{inviteCode}</div>
+              <button className="lists-submit-btn" onClick={handleShare}>
+                📤 Κοινοποίηση
+              </button>
+              <button className="lists-action-btn" onClick={handleCopyCode}>
+                {copied ? '✅ Αντιγράφηκε!' : '📋 Αντιγραφή κωδικού'}
+              </button>
+            </div>
+          </>
+        )}
 
-      {showHelp && (
-        <div className="help-overlay" onClick={() => setShowHelp(false)}>
-          <div className="help-modal" onClick={e => e.stopPropagation()}>
-            <OnboardingPage onDone={() => setShowHelp(false)} isModal />
-          </div>
-        </div>
-      )}
+        {/* ── Join list ── */}
+        {view === 'join' && (
+          <>
+            <div className="lists-header">
+              <button className="lists-back" onClick={() => setView('main')}>←</button>
+              <h2 className="lists-title">Συμμετοχή</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="lists-form">
+              <p className="lists-invite-desc">Βάλε τον κωδικό που σου έστειλαν:</p>
+              <input
+                className="lists-input lists-input--code"
+                placeholder="ABC123"
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                maxLength={6}
+                autoFocus
+              />
+              {error && <p className="lists-error">{error}</p>}
+              <button className="lists-submit-btn" onClick={handleJoin} disabled={loading || !joinCode.trim()}>
+                {loading ? '...' : 'Συμμετοχή'}
+              </button>
+            </div>
+          </>
+        )}
 
-      {showLists && user && (
-        <ListsModal
-          lists={lists}
-          listId={listId}
-          listName={listName}
-          inviteCode={inviteCode}
-          user={user}
-          onSwitch={switchToList}
-          onCreate={createList}
-          onJoin={joinList}
-          onRename={renameList}
-          onDelete={deleteList}
-          onClose={() => setShowLists(false)}
-        />
-      )}
-
-      {showFavourites && (
-        <FavouritesModal
-          onAdd={products => products.forEach(p => addItem(p))}
-          onClose={() => setShowFavourites(false)}
-        />
-      )}
-
-      {storeRanking && (
-        <StoreRankingModal
-          stores={storeRanking}
-          totalItems={unchecked.length}
-          allListItems={unchecked}
-          onClose={() => setStoreRanking(null)}
-          onStartShopping={handleStartShopping}
-        />
-      )}
+        {/* ── Rename ── */}
+        {view === 'rename' && (
+          <>
+            <div className="lists-header">
+              <button className="lists-back" onClick={() => setView('main')}>←</button>
+              <h2 className="lists-title">Μετονομασία</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="lists-form">
+              <input
+                className="lists-input"
+                value={renameName}
+                onChange={e => setRenameName(e.target.value)}
+                autoFocus
+              />
+              <button className="lists-submit-btn" onClick={handleRename} disabled={loading || !renameName.trim()}>
+                {loading ? '...' : 'Αποθήκευση'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
