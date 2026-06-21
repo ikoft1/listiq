@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './AuthPage.css'
 
-export default function AuthPage({ onGuest }) {
+export default function AuthPage({ onGuest, onBeforeLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState('login')
@@ -15,6 +15,8 @@ export default function AuthPage({ onGuest }) {
     setLoading(true)
     setError(null)
     setMessage(null)
+    // Αποθήκευσε guest items πριν το login
+    onBeforeLogin?.()
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError('Λάθος email ή κωδικός')
@@ -27,6 +29,8 @@ export default function AuthPage({ onGuest }) {
   }
 
   async function handleGoogle() {
+    // Αποθήκευσε guest items ΠΡΙΝ το redirect
+    onBeforeLogin?.()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin }
@@ -40,22 +44,8 @@ export default function AuthPage({ onGuest }) {
         <p className="auth-sub">Έξυπνη λίστα αγορών</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="auth-input"
-          />
-          <input
-            type="password"
-            placeholder="Κωδικός"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="auth-input"
-          />
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="auth-input" />
+          <input type="password" placeholder="Κωδικός" value={password} onChange={e => setPassword(e.target.value)} required className="auth-input" />
           {error && <p className="auth-error">{error}</p>}
           {message && <p className="auth-message">{message}</p>}
           <button type="submit" className="auth-btn" disabled={loading}>
