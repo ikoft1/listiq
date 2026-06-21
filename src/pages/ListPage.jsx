@@ -299,6 +299,11 @@ export default function ListPage() {
         <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
+        <div className="footer-links">
+          <a href="/privacy.html" target="_blank">Πολιτική Απορρήτου</a>
+          <span>·</span>
+          <a href="/terms.html" target="_blank">Όροι Χρήσης</a>
+        </div>
       </footer>
 
       {selectedProduct && (
