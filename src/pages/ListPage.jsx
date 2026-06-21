@@ -186,11 +186,9 @@ export default function ListPage({ onSignOut, user: userProp }) {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
-          {user && (
-            <button className="btn-list-name" onClick={() => setShowLists(true)}>
-              {listName} ▾
-            </button>
-          )}
+          <button className="btn-list-name" onClick={() => setShowLists(true)}>
+            {user ? listName : 'Λίστα μου'} ▾
+          </button>
           <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
             ?
           </button>
@@ -332,7 +330,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
         </div>
       )}
 
-      {showLists && user && (
+      {showLists && (
         <ListsModal
           lists={lists}
           listId={listId}
