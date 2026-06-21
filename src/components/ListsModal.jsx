@@ -1,5 +1,5 @@
 import AuthPage from '../pages/AuthPage'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './ListsModal.css'
 
 const STORAGE_KEY = 'listiq_items'
@@ -9,7 +9,6 @@ function saveGuestItems() {
   const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i && i.name)
   if (items.length > 0) {
     localStorage.setItem(GUEST_ITEMS_KEY, JSON.stringify(items))
-    console.log('Saved guest items before login:', items.length)
   }
 }
 
@@ -17,7 +16,11 @@ export default function ListsModal({
   lists, listId, listName, inviteCode, user,
   onSwitch, onCreate, onJoin, onRename, onDelete, onClose, autoShowInvite
 }) {
-  const [view, setView] = useState(autoShowInvite ? 'invite' : 'main')
+  const [view, setView] = useState(() => {
+    if (!user) return 'auth'
+    if (autoShowInvite) return 'name' // μετά το login → ονομασία λίστας
+    return 'main'
+  })
   const [newName, setNewName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [renameId, setRenameId] = useState(null)
@@ -26,12 +29,28 @@ export default function ListsModal({
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Όταν κάνει login → πήγαινε στο 'name' view για ονομασία
+  useEffect(() => {
+    if (user && view === 'auth') {
+      setView('name')
+    }
+  }, [user])
+
   async function handleCreate() {
     if (!newName.trim()) return
     setLoading(true)
     await onCreate(newName.trim())
     setLoading(false)
-    onClose()
+    setView('invite') // μετά τη δημιουργία → κοινοποίηση
+  }
+
+  async function handleSaveName() {
+    if (!newName.trim()) return
+    setLoading(true)
+    // Μετονόμασε την τρέχουσα λίστα
+    await onRename(listId, newName.trim())
+    setLoading(false)
+    setView('invite') // μετά → κοινοποίηση
   }
 
   async function handleJoin() {
@@ -72,29 +91,50 @@ export default function ListsModal({
     }
   }
 
-  // Αν δεν είναι logged in → εμφάνισε login
-  if (!user) {
-    return (
-      <div className="lists-overlay" onClick={onClose}>
-        <div className="lists-modal lists-modal--auth" onClick={e => e.stopPropagation()}>
-          <div className="lists-header">
-            <h2 className="lists-title">Αποθήκευση λίστας</h2>
-            <button className="lists-close" onClick={onClose}>✕</button>
-          </div>
-          <p className="lists-auth-desc">Συνδέσου για να αποθηκεύσεις και να κοινοποιήσεις τη λίστα σου.</p>
-          <AuthPage
-            onGuest={onClose}
-            onBeforeLogin={saveGuestItems}
-          />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="lists-overlay" onClick={onClose}>
-      <div className="lists-modal" onClick={e => e.stopPropagation()}>
+      <div className={`lists-modal ${view === 'auth' ? 'lists-modal--auth' : ''}`} onClick={e => e.stopPropagation()}>
 
+        {/* ── Auth view ── */}
+        {view === 'auth' && (
+          <>
+            <div className="lists-header">
+              <h2 className="lists-title">Αποθήκευση λίστας</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <p className="lists-auth-desc">Συνδέσου για να αποθηκεύσεις και να κοινοποιήσεις τη λίστα σου.</p>
+            <AuthPage onGuest={onClose} onBeforeLogin={saveGuestItems} />
+          </>
+        )}
+
+        {/* ── Name view — ονομασία λίστας μετά το login ── */}
+        {view === 'name' && (
+          <>
+            <div className="lists-header">
+              <h2 className="lists-title">Όνομα λίστας</h2>
+              <button className="lists-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="lists-form">
+              <p className="lists-invite-desc">Δώσε ένα όνομα στη λίστα σου:</p>
+              <input
+                className="lists-input"
+                placeholder="π.χ. Εβδομαδιαία αγορά"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+              />
+              <button className="lists-submit-btn" onClick={handleSaveName} disabled={loading || !newName.trim()}>
+                {loading ? '...' : '💾 Αποθήκευση'}
+              </button>
+              <button className="lists-action-btn" onClick={() => setView('invite')}>
+                Παράλειψη →
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Main view ── */}
         {view === 'main' && (
           <>
             <div className="lists-header">
@@ -110,10 +150,12 @@ export default function ListsModal({
                     {l.user_id !== user?.id && <span className="lists-item-shared">κοινή</span>}
                   </button>
                   <div className="lists-item-actions">
-                    <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
-                   {l.user_id === user?.id && (
-  <button onClick={() => onDelete(l.id)}>🗑️</button>
-)}
+                    {l.user_id === user?.id && (
+                      <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
+                    )}
+                    {l.user_id === user?.id && (
+                      <button onClick={() => onDelete(l.id)}>🗑️</button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -126,6 +168,7 @@ export default function ListsModal({
           </>
         )}
 
+        {/* ── New list ── */}
         {view === 'new' && (
           <>
             <div className="lists-header">
@@ -142,6 +185,7 @@ export default function ListsModal({
           </>
         )}
 
+        {/* ── Invite code ── */}
         {view === 'invite' && (
           <>
             <div className="lists-header">
@@ -160,6 +204,7 @@ export default function ListsModal({
           </>
         )}
 
+        {/* ── Join list ── */}
         {view === 'join' && (
           <>
             <div className="lists-header">
@@ -185,6 +230,7 @@ export default function ListsModal({
           </>
         )}
 
+        {/* ── Rename ── */}
         {view === 'rename' && (
           <>
             <div className="lists-header">
