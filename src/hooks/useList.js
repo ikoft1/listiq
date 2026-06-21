@@ -23,6 +23,7 @@ export function useList() {
   const [user, setUser] = useState(null)
   const [lists, setLists] = useState([])
   const realtimeRef = useRef(null)
+  const prevUserRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -35,18 +36,22 @@ export function useList() {
   }, [])
 
   useEffect(() => {
-    if (user) {
-      // Αποθήκευσε τα guest items πριν κάνουμε τίποτα
-      const currentItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i.name)
+    if (user && !prevUserRef.current) {
+      // Μόλις έγινε login — αποθήκευσε τα guest items ΑΜΕΣΩΣ
+      const currentItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(i => i && i.name)
       if (currentItems.length > 0) {
         localStorage.setItem(GUEST_ITEMS_KEY, JSON.stringify(currentItems))
+        console.log('Saved guest items for migration:', currentItems.length)
       }
+      prevUserRef.current = user
       loadUserLists()
-    } else {
+    } else if (!user) {
+      prevUserRef.current = null
       setItems(JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
     }
   }, [user])
 
+  // Αποθήκευση στο localStorage μόνο για guests
   useEffect(() => {
     if (!user) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
@@ -133,11 +138,11 @@ export function useList() {
     }
 
     if (targetListId) {
-      // Πρώτα κάνε migration των guest items
-      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]').filter(i => i.name)
-      
+      // Migration: ανέβασε guest items στο Supabase
+      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]').filter(i => i && i.name)
+
       if (guestItems.length > 0) {
-        // Ανέβασε τα guest items στο Supabase
+        console.log('Migrating guest items:', guestItems.length)
         for (const item of guestItems) {
           await supabase.from('list_items').insert({
             id: crypto.randomUUID(),
@@ -155,14 +160,14 @@ export function useList() {
           })
         }
         localStorage.removeItem(GUEST_ITEMS_KEY)
+        localStorage.removeItem(STORAGE_KEY)
       }
 
-      // Μετά φόρτωσε τα items από Supabase
+      // Φόρτωσε τα items (με τα migrated items)
       await switchToList(targetListId)
     }
   }
 
-  // Internal version για χρήση εντός του hook
   async function createListInternal(name) {
     const code = generateInviteCode()
     const { data } = await supabase
