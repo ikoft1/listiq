@@ -18,9 +18,10 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  function handleSignOut() {
-    supabase.auth.signOut()
-  }
+async function handleSignOut() {
+  await supabase.auth.signOut()
+  window.location.reload()
+}
 
   if (loading) return null
 
