@@ -129,24 +129,37 @@ export function useList() {
     const savedListId = localStorage.getItem(ACTIVE_LIST_KEY)
     const activeList = allLists.find(l => l.id === savedListId) || allLists[0]
 
-    let targetListId
     if (activeList) {
-      targetListId = activeList.id
-    } else {
-      const newList = await createListInternal('Λίστα μου')
-      targetListId = newList?.id
+      // Φόρτωσε την ενεργή λίστα από Supabase
+      await switchToList(activeList.id)
     }
+    // Αν δεν υπάρχει λίστα → δουλεύει τοπικά, χωρίς αυτόματη δημιουργία
+  }
 
-    if (targetListId) {
+  async function createListInternal(name) {
+    const code = generateInviteCode()
+    const { data } = await supabase
+      .from('lists')
+      .insert({ user_id: user.id, name, invite_code: code })
+      .select('id, name, invite_code')
+      .single()
+    if (data) setLists(prev => [...prev, data])
+    return data
+  }
+
+  async function createList(name) {
+    const data = await createListInternal(name)
+    if (data) {
       // Migration: ανέβασε guest items στο Supabase
-      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]').filter(i => i && i.name)
+      const guestItems = JSON.parse(localStorage.getItem(GUEST_ITEMS_KEY) || '[]')
+        .concat(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+        .filter((i, idx, arr) => i && i.name && arr.findIndex(x => x.id === i.id) === idx)
 
       if (guestItems.length > 0) {
-        console.log('Migrating guest items:', guestItems.length)
         for (const item of guestItems) {
           await supabase.from('list_items').insert({
             id: crypto.randomUUID(),
-            list_id: targetListId,
+            list_id: data.id,
             name: item.name,
             brand: item.brand || null,
             quantity: item.quantity || 1,
@@ -163,25 +176,8 @@ export function useList() {
         localStorage.removeItem(STORAGE_KEY)
       }
 
-      // Φόρτωσε τα items (με τα migrated items)
-      await switchToList(targetListId)
+      await switchToList(data.id)
     }
-  }
-
-  async function createListInternal(name) {
-    const code = generateInviteCode()
-    const { data } = await supabase
-      .from('lists')
-      .insert({ user_id: user.id, name, invite_code: code })
-      .select('id, name, invite_code')
-      .single()
-    if (data) setLists(prev => [...prev, data])
-    return data
-  }
-
-  async function createList(name) {
-    const data = await createListInternal(name)
-    if (data) await switchToList(data.id)
     return data
   }
 
