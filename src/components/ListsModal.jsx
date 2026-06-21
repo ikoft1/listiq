@@ -4,9 +4,9 @@ import './ListsModal.css'
 
 export default function ListsModal({
   lists, listId, listName, inviteCode, user,
-  onSwitch, onCreate, onJoin, onRename, onDelete, onClose
+  onSwitch, onCreate, onJoin, onRename, onDelete, onClose, autoShowInvite
 }) {
-  const [view, setView] = useState('main') // main | new | join | invite | rename
+  const [view, setView] = useState(autoShowInvite ? 'invite' : 'main') // main | new | join | invite | rename
   const [newName, setNewName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [renameId, setRenameId] = useState(null)
