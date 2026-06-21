@@ -10,7 +10,7 @@ import OnboardingPage from './OnboardingPage'
 import ListsModal from '../components/ListsModal'
 import './ListPage.css'
 
-export default function ListPage({ onSignOut, user: userProp }) {
+export default function ListPage({ onSignOut }) {
   const { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user, lists, listId, listName, inviteCode, createList, switchToList, joinList, renameList, deleteList } = useList()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -22,13 +22,13 @@ export default function ListPage({ onSignOut, user: userProp }) {
   const [noResults, setNoResults] = useState(false)
   const [storeRanking, setStoreRanking] = useState(null)
   const [findingStores, setFindingStores] = useState(false)
-
   const [shoppingCart, setShoppingCart] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshToast, setRefreshToast] = useState(null)
   const [showFavourites, setShowFavourites] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showLists, setShowLists] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem('listiq_onboarding_done') === 'true'
   })
@@ -82,18 +82,12 @@ export default function ListPage({ onSignOut, user: userProp }) {
         original.price !== item.price ||
         JSON.stringify(original.retailer_prices) !== JSON.stringify(item.retailer_prices)
       )) {
-        updateItem(item.id, {
-          price: item.price,
-          retailer_prices: item.retailer_prices,
-        })
+        updateItem(item.id, { price: item.price, retailer_prices: item.retailer_prices })
         changedCount++
       }
     })
     setRefreshing(false)
-    setRefreshToast(changedCount > 0
-      ? `✅ Ανανεώθηκαν ${changedCount} τιμές`
-      : '✅ Οι τιμές είναι ενημερωμένες'
-    )
+    setRefreshToast(changedCount > 0 ? `✅ Ανανεώθηκαν ${changedCount} τιμές` : '✅ Οι τιμές είναι ενημερωμένες')
     setTimeout(() => setRefreshToast(null), 3000)
   }
 
@@ -110,10 +104,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
   }
 
   function handleAddResult(product) {
-    addItem({
-      ...product,
-      name: `${product.brand} ${product.name}`.trim(),
-    })
+    addItem({ ...product, name: `${product.brand} ${product.name}`.trim() })
     setResults([])
     setQuery('')
     setSelectedProduct(null)
@@ -136,24 +127,41 @@ export default function ListPage({ onSignOut, user: userProp }) {
   function handleShare() {
     const activeItems = items.filter(i => !i.checked)
     if (!activeItems.length) return
-
     const lines = activeItems.map(i => {
       const price = i.price ? ` ~€${i.price.toFixed(2)}` : ''
       return `• ${i.name}${price}`
     })
-
     const totalPrice = activeItems.filter(i => i.price).reduce((sum, i) => sum + i.price, 0)
-    const totalLine = totalPrice > 0 ? `
-Σύνολο: ~€${totalPrice.toFixed(2)}` : ''
-
+    const totalLine = totalPrice > 0 ? `\nΣύνολο: ~€${totalPrice.toFixed(2)}` : ''
     const text = `🛒 Λίστα αγορών\n\n${lines.join('\n')}${totalLine}\n\ngolistiq.com`
-
     if (navigator.share) {
       navigator.share({ title: 'Λίστα αγορών - Listiq', text })
     } else {
       navigator.clipboard.writeText(text)
       setRefreshToast('✅ Αντιγράφηκε στο clipboard!')
       setTimeout(() => setRefreshToast(null), 3000)
+    }
+  }
+
+  // Migration: μεταφορά guest items στο Supabase μετά το login
+  useEffect(() => {
+    if (user && listId && items.length > 0) {
+      const guestItems = JSON.parse(localStorage.getItem('listiq_guest_items') || '[]')
+      if (guestItems.length > 0) {
+        guestItems.forEach(item => addItem(item))
+        localStorage.removeItem('listiq_guest_items')
+      }
+    }
+  }, [user, listId])
+
+  // Save guest items πριν το login
+  function handleSaveList() {
+    if (!user) {
+      // Αποθήκευσε τα τρέχοντα items ως guest items
+      localStorage.setItem('listiq_guest_items', JSON.stringify(items))
+      setShowLists(true)
+    } else {
+      setShowLists(true)
     }
   }
 
@@ -173,7 +181,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
         storeItems={shoppingCart.storeItems}
         allListItems={items.filter(i => !i.checked)}
         onClose={() => setShoppingCart(null)}
-        onNewList={() => { clearAll(); setShoppingCart(null); }}
+        onNewList={() => { clearAll(); setShoppingCart(null) }}
       />
     )
   }
@@ -186,36 +194,44 @@ export default function ListPage({ onSignOut, user: userProp }) {
       <header className="list-header">
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
-          <button className="btn-list-name" onClick={() => setShowLists(true)}>
-            {user ? listName : 'Λίστα μου'} ▾
+
+          {/* Αποθήκευση λίστας — πάντα ορατό */}
+          <button className="btn-save-list" onClick={handleSaveList} title="Αποθήκευση & κοινοποίηση λίστας">
+            {user ? (listName || 'Λίστα μου') + ' ▾' : '💾 Αποθήκευση'}
           </button>
-          <button className="btn-help" onClick={() => setShowHelp(true)} aria-label="Βοήθεια">
-            ?
-          </button>
-          {user && (
-            <button className="btn-user" onClick={onSignOut} title={user.email} aria-label="Αποσύνδεση">
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} className="user-avatar" alt="avatar" />
-                : <span className="user-initials">{(user.email || '?')[0].toUpperCase()}</span>
-              }
-            </button>
-          )}
-          <button
-            className="btn-refresh"
-            onClick={handleRefreshPrices}
-            disabled={refreshing}
-            aria-label="Ανανέωση τιμών"
-          >
+
+          <button className="btn-help" onClick={() => setShowHelp(true)} title="Βοήθεια">?</button>
+          <button className="btn-refresh" onClick={handleRefreshPrices} disabled={refreshing} title="Ανανέωση τιμών">
             {refreshing ? '⏳' : '🔄'}
           </button>
-          <button className="btn-favourites" onClick={() => setShowFavourites(true)} aria-label="Αγαπημένα">
-            ⭐
-          </button>
+          <button className="btn-favourites" onClick={() => setShowFavourites(true)} title="Αγαπημένα προϊόντα">⭐</button>
           {items.filter(i => !i.checked).length > 0 && (
-            <button className="btn-share" onClick={handleShare} aria-label="Κοινοποίηση">
-              📤
-            </button>
+            <button className="btn-share" onClick={handleShare} title="Κοινοποίηση λίστας">📤</button>
           )}
+
+          {/* Avatar με menu */}
+          {user && (
+            <div className="user-menu-wrap">
+              <button className="btn-user" onClick={() => setShowUserMenu(v => !v)} title={user.email}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} className="user-avatar" alt="avatar" />
+                  : <span className="user-initials">{(user.email || '?')[0].toUpperCase()}</span>
+                }
+              </button>
+              {showUserMenu && (
+                <div className="user-menu" onClick={() => setShowUserMenu(false)}>
+                  <div className="user-menu-email">{user.email}</div>
+                  <button className="user-menu-item" onClick={() => setShowLists(true)}>
+                    📋 Οι λίστες μου
+                  </button>
+                  <button className="user-menu-item user-menu-item--danger" onClick={onSignOut}>
+                    🚪 Αποσύνδεση
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {checkedCount > 0 && (
             <div className="total-badge">
               {total > 0 ? `€${total.toFixed(2)}` : `${checkedCount} ✓`}
@@ -223,9 +239,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
           )}
         </div>
 
-        {refreshToast && (
-          <div className="refresh-toast">{refreshToast}</div>
-        )}
+        {refreshToast && <div className="refresh-toast">{refreshToast}</div>}
 
         <form className="search-form" onSubmit={e => { e.preventDefault(); handleAddManual() }}>
           <input
@@ -286,11 +300,7 @@ export default function ListPage({ onSignOut, user: userProp }) {
         ))}
 
         {unchecked.length >= 2 && (
-          <button
-            className="btn-find-stores"
-            onClick={handleFindBestStores}
-            disabled={findingStores}
-          >
+          <button className="btn-find-stores" onClick={handleFindBestStores} disabled={findingStores}>
             {findingStores ? '⏳ Ψάχνω τιμές...' : '🛒 Βρες καλύτερο SM'}
           </button>
         )}
@@ -312,14 +322,15 @@ export default function ListPage({ onSignOut, user: userProp }) {
         <a href="https://paypal.me/kofteridis" target="_blank" rel="noopener noreferrer" className="donate-btn">
           ☕ Αν σου άρεσε, κέρασέ μας έναν καφέ
         </a>
+        <div className="footer-links">
+          <a href="/privacy.html" target="_blank">Πολιτική Απορρήτου</a>
+          <span>·</span>
+          <a href="/terms.html" target="_blank">Όροι Χρήσης</a>
+        </div>
       </footer>
 
       {selectedProduct && (
-        <PriceModal
-          product={selectedProduct}
-          onAdd={handleAddResult}
-          onClose={() => setSelectedProduct(null)}
-        />
+        <PriceModal product={selectedProduct} onAdd={handleAddResult} onClose={() => setSelectedProduct(null)} />
       )}
 
       {showHelp && (
@@ -361,6 +372,11 @@ export default function ListPage({ onSignOut, user: userProp }) {
           onClose={() => setStoreRanking(null)}
           onStartShopping={handleStartShopping}
         />
+      )}
+
+      {/* Click outside για user menu */}
+      {showUserMenu && (
+        <div className="user-menu-backdrop" onClick={() => setShowUserMenu(false)} />
       )}
     </div>
   )
