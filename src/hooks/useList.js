@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const STORAGE_KEY = 'listiq_items'
+const ACTIVE_LIST_KEY = 'listiq_active_list'
+
+function generateInviteCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
 
 export function useList() {
   const [items, setItems] = useState(() => {
@@ -11,8 +16,12 @@ export function useList() {
       return []
     }
   })
-  const [listId, setListId] = useState(null)
+  const [listId, setListId] = useState(() => localStorage.getItem(ACTIVE_LIST_KEY) || null)
+  const [listName, setListName] = useState('Λίστα μου')
+  const [inviteCode, setInviteCode] = useState(null)
   const [user, setUser] = useState(null)
+  const [lists, setLists] = useState([]) // όλες οι λίστες του χρήστη
+  const realtimeRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -25,56 +34,191 @@ export function useList() {
   }, [])
 
   useEffect(() => {
-    if (user) loadFromSupabase()
+    if (user) loadUserLists()
+    else {
+      // Guest mode — χρήση localStorage
+      setItems(JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
+    }
   }, [user])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  async function loadFromSupabase() {
-    let { data: lists } = await supabase
-      .from('lists')
-      .select('id')
-      .eq('user_id', user.id)
-      .limit(1)
-    let id
-    if (!lists?.length) {
-      const { data } = await supabase
-        .from('lists')
-        .insert({ user_id: user.id, name: 'Λίστα μου' })
-        .select('id')
-        .single()
-      id = data?.id
-    } else {
-      id = lists[0].id
+  // Real-time subscription
+  useEffect(() => {
+    if (!listId || !user) return
+
+    // Unsubscribe από προηγούμενη subscription
+    if (realtimeRef.current) {
+      realtimeRef.current.unsubscribe()
     }
+
+    const channel = supabase
+      .channel(`list_items_${listId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'list_items',
+        filter: `list_id=eq.${listId}`
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newItem = payload.new
+          setItems(prev => {
+            if (prev.find(i => i.id === newItem.id)) return prev
+            return [mapDbItem(newItem), ...prev]
+          })
+        } else if (payload.eventType === 'UPDATE') {
+          setItems(prev => prev.map(i =>
+            i.id === payload.new.id ? { ...i, ...mapDbItem(payload.new) } : i
+          ))
+        } else if (payload.eventType === 'DELETE') {
+          setItems(prev => prev.filter(i => i.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    realtimeRef.current = channel
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [listId, user])
+
+  function mapDbItem(i, localItems = []) {
+    const local = localItems.find(l => l.id === i.id) || {}
+    return {
+      id: i.id,
+      name: i.name,
+      brand: local.brand || i.brand || null,
+      quantity: i.quantity || 1,
+      checked: i.checked,
+      price: i.price,
+      store: i.store,
+      barcode: i.barcode,
+      product_id: local.product_id || i.product_id || null,
+      retailer_prices: local.retailer_prices || [],
+      unit: local.unit || i.unit || null,
+      unit_quantity: local.unit_quantity || i.unit_quantity || null,
+      category_ids: local.category_ids || [],
+    }
+  }
+
+  async function loadUserLists() {
+    // Φόρτωσε λίστες που ανήκουν στον χρήστη ή είναι μέλος
+    const { data: ownLists } = await supabase
+      .from('lists')
+      .select('id, name, invite_code, user_id')
+      .eq('user_id', user.id)
+
+    const { data: memberLists } = await supabase
+      .from('list_members')
+      .select('list_id, lists(id, name, invite_code, user_id)')
+      .eq('user_id', user.id)
+
+    const allLists = [
+      ...(ownLists || []),
+      ...(memberLists || []).map(m => m.lists).filter(Boolean)
+    ]
+
+    setLists(allLists)
+
+    // Φόρτωσε την ενεργή λίστα
+    const savedListId = localStorage.getItem(ACTIVE_LIST_KEY)
+    const activeList = allLists.find(l => l.id === savedListId) || allLists[0]
+
+    if (activeList) {
+      await switchToList(activeList.id)
+    } else {
+      // Δημιούργησε νέα λίστα
+      await createList('Λίστα μου')
+    }
+  }
+
+  async function createList(name) {
+    const code = generateInviteCode()
+    const { data } = await supabase
+      .from('lists')
+      .insert({ user_id: user.id, name, invite_code: code })
+      .select('id, name, invite_code')
+      .single()
+
+    if (data) {
+      setLists(prev => [...prev, data])
+      await switchToList(data.id)
+    }
+    return data
+  }
+
+  async function switchToList(id) {
     setListId(id)
+    localStorage.setItem(ACTIVE_LIST_KEY, id)
+
+    // Φόρτωσε info λίστας
+    const { data: listData } = await supabase
+      .from('lists')
+      .select('name, invite_code')
+      .eq('id', id)
+      .single()
+
+    if (listData) {
+      setListName(listData.name)
+      setInviteCode(listData.invite_code)
+    }
+
+    // Φόρτωσε items
+    const localItems = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
     const { data: dbItems } = await supabase
       .from('list_items')
       .select('*')
       .eq('list_id', id)
       .order('created_at', { ascending: false })
-    if (dbItems?.length) {
-      const localItems = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
-      setItems(dbItems.map(i => {
-        const local = localItems.find(l => l.id === i.id)
-        return {
-          id: i.id,
-          name: i.name,
-          brand: local?.brand || null,
-          quantity: i.quantity,
-          checked: i.checked,
-          price: i.price,
-          store: i.store,
-          barcode: i.barcode,
-          product_id: local?.product_id || null,
-          retailer_prices: local?.retailer_prices || [],
-          unit: local?.unit || null,
-          unit_quantity: local?.unit_quantity || null,
-          category_ids: local?.category_ids || [],
-        }
-      }))
+
+    if (dbItems) {
+      setItems(dbItems.map(i => mapDbItem(i, localItems)))
+    } else {
+      setItems([])
+    }
+  }
+
+  async function joinList(inviteCode) {
+    // Βρες τη λίστα με τον κωδικό
+    const { data: list } = await supabase
+      .from('lists')
+      .select('id, name, invite_code, user_id')
+      .eq('invite_code', inviteCode.toUpperCase())
+      .single()
+
+    if (!list) return { error: 'Δεν βρέθηκε λίστα με αυτόν τον κωδικό' }
+    if (list.user_id === user.id) return { error: 'Αυτή είναι η δική σου λίστα' }
+
+    // Πρόσθεσε ως μέλος
+    await supabase.from('list_members').upsert({
+      list_id: list.id,
+      user_id: user.id
+    })
+
+    setLists(prev => [...prev.filter(l => l.id !== list.id), list])
+    await switchToList(list.id)
+    return { success: true, list }
+  }
+
+  async function renameList(id, name) {
+    await supabase.from('lists').update({ name }).eq('id', id)
+    setLists(prev => prev.map(l => l.id === id ? { ...l, name } : l))
+    if (id === listId) setListName(name)
+  }
+
+  async function deleteList(id) {
+    await supabase.from('lists').delete().eq('id', id)
+    setLists(prev => prev.filter(l => l.id !== id))
+    if (id === listId) {
+      const remaining = lists.filter(l => l.id !== id)
+      if (remaining.length > 0) {
+        await switchToList(remaining[0].id)
+      } else {
+        await createList('Λίστα μου')
+      }
     }
   }
 
@@ -83,7 +227,7 @@ export function useList() {
       id: crypto.randomUUID(),
       name: product.name || product,
       brand: product.brand || null,
-      quantity: 1,
+      quantity: product.quantity || 1,
       checked: false,
       price: product.price || null,
       store: product.store || null,
@@ -100,10 +244,14 @@ export function useList() {
         id: item.id,
         list_id: listId,
         name: item.name,
+        brand: item.brand,
         quantity: item.quantity,
         price: item.price,
         store: item.store,
         barcode: item.barcode,
+        product_id: item.product_id,
+        unit: item.unit,
+        unit_quantity: item.unit_quantity,
         checked: false,
       })
     }
@@ -140,10 +288,10 @@ export function useList() {
     }
   }
 
-  function clearAll() {
+  async function clearAll() {
     setItems([])
     if (user && listId) {
-      supabase.from('list_items').delete().eq('list_id', listId)
+      await supabase.from('list_items').delete().eq('list_id', listId)
     }
   }
 
@@ -153,5 +301,11 @@ export function useList() {
 
   const checkedCount = items.filter(i => i.checked).length
 
-  return { items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll, total, checkedCount, user }
+  return {
+    items, addItem, toggleItem, removeItem, updateItem, clearChecked, clearAll,
+    total, checkedCount, user,
+    // Multi-list
+    lists, listId, listName, inviteCode,
+    createList, switchToList, joinList, renameList, deleteList,
+  }
 }
