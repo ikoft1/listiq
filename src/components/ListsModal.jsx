@@ -111,9 +111,9 @@ export default function ListsModal({
                   </button>
                   <div className="lists-item-actions">
                     <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
-                    {lists.length > 1 && l.user_id === user?.id && (
-                      <button onClick={() => onDelete(l.id)}>🗑️</button>
-                    )}
+                   {l.user_id === user?.id && (
+  <button onClick={() => onDelete(l.id)}>🗑️</button>
+)}
                   </div>
                 </div>
               ))}
