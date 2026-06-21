@@ -44,14 +44,13 @@ export default function ListsModal({
     setView('invite') // μετά τη δημιουργία → κοινοποίηση
   }
 
-  async function handleSaveName() {
-    if (!newName.trim()) return
-    setLoading(true)
-    // Μετονόμασε την τρέχουσα λίστα
-    await onRename(listId, newName.trim())
-    setLoading(false)
-    setView('invite') // μετά → κοινοποίηση
-  }
+ async function handleSaveName() {
+  if (!newName.trim()) return
+  setLoading(true)
+  await onCreate(newName.trim())
+  setLoading(false)
+  setView('invite')
+}
 
   async function handleJoin() {
     if (!joinCode.trim()) return
