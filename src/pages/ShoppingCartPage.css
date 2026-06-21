@@ -631,3 +631,37 @@
   font-weight: 700;
   color: #1a9e5c;
 }
+
+/* ── Inline price input ── */
+.cart-item-price-input-wrap {
+  flex-shrink: 0;
+  padding: 8px 12px 8px 4px;
+}
+
+.cart-item-price-input {
+  width: 90px;
+  height: 34px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a9e5c;
+  text-align: center;
+  outline: none;
+  background: #f9f9f9;
+  -moz-appearance: textfield;
+}
+.cart-item-price-input::-webkit-outer-spin-button,
+.cart-item-price-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.cart-item-price-input:focus {
+  border-color: #1a9e5c;
+  background: #fff;
+}
+.cart-item-price-input::placeholder {
+  color: #ccc;
+  font-size: 11px;
+  font-weight: 400;
+}
