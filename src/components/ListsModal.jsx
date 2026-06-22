@@ -147,7 +147,7 @@ export default function ListsModal({
                   <button className="lists-item-main" onClick={() => { onSwitch(l.id); onClose() }}>
                     <span className="lists-item-check">{l.id === listId ? '✓' : ''}</span>
                     <span className="lists-item-name">{l.name}</span>
-                    {l.user_id !== user?.id && <span className="lists-item-shared">κοινή</span>}
+                    {l.user_id && l.user_id !== user?.id && <span className="lists-item-shared">κοινή</span>}
                   </button>
                   <div className="lists-item-actions">
                     {l.user_id === user?.id && (
