@@ -212,12 +212,12 @@ export default function ListPage({ onSignOut }) {
                 }
               </button>
               {showUserMenu && (
-                <div className="user-menu">
+                <div className="user-menu" onClick={e => e.stopPropagation()}>
                   <div className="user-menu-email">{user.email}</div>
-                  <button className="user-menu-item" onMouseDown={() => { setShowUserMenu(false); setShowLists(true) }}>
+                  <button className="user-menu-item" onClick={() => { setShowUserMenu(false); setShowLists(true) }}>
                     📋 Οι λίστες μου
                   </button>
-                  <button className="user-menu-item user-menu-item--danger" onMouseDown={() => { setShowUserMenu(false); onSignOut() }}>
+                  <button className="user-menu-item user-menu-item--danger" onClick={() => { setShowUserMenu(false); onSignOut() }}>
                     🚪 Αποσύνδεση
                   </button>
                 </div>
@@ -369,7 +369,7 @@ export default function ListPage({ onSignOut }) {
       )}
 
       {showUserMenu && (
-        <div className="user-menu-backdrop" onMouseDown={() => setShowUserMenu(false)} />
+        <div className="user-menu-backdrop" onClick={() => setShowUserMenu(false)} />
       )}
     </div>
   )
