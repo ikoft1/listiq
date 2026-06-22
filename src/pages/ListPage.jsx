@@ -156,15 +156,10 @@ export default function ListPage({ onSignOut }) {
   }, [user, listId])
 
   // Save guest items πριν το login
-  function handleSaveList() {
-    if (!user) {
-      setAutoShowInvite(true)
-      setShowLists(true)
-    } else {
-      setAutoShowInvite(false)
-      setShowLists(true)
-    }
-  }
+ function handleSaveList() {
+  setAutoShowInvite(true)
+  setShowLists(true)
+}
 
   if (!onboardingDone) {
     return (
