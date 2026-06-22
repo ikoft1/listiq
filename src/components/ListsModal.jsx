@@ -18,7 +18,8 @@ export default function ListsModal({
 }) {
   const [view, setView] = useState(() => {
     if (!user) return 'auth'
-    if (autoShowInvite) return 'name' // μετά το login → ονομασία λίστας
+    if (autoShowInvite && !listId) return 'name' // δεν έχει λίστα → ονομασία
+    if (autoShowInvite && listId) return 'invite' // έχει λίστα → κοινοποίηση
     return 'main'
   })
   const [newName, setNewName] = useState('')
@@ -44,13 +45,14 @@ export default function ListsModal({
     setView('invite') // μετά τη δημιουργία → κοινοποίηση
   }
 
- async function handleSaveName() {
-  if (!newName.trim()) return
-  setLoading(true)
-  await onCreate(newName.trim())
-  setLoading(false)
-  setView('invite')
-}
+  async function handleSaveName() {
+    if (!newName.trim()) return
+    setLoading(true)
+    // Μετονόμασε την τρέχουσα λίστα
+    await onRename(listId, newName.trim())
+    setLoading(false)
+    setView('invite') // μετά → κοινοποίηση
+  }
 
   async function handleJoin() {
     if (!joinCode.trim()) return
@@ -189,11 +191,19 @@ export default function ListsModal({
           <>
             <div className="lists-header">
               <button className="lists-back" onClick={() => setView('main')}>←</button>
-              <h2 className="lists-title">Κοινοποίηση</h2>
+              <h2 className="lists-title">{listName || 'Λίστα μου'}</h2>
               <button className="lists-close" onClick={onClose}>✕</button>
             </div>
             <div className="lists-invite">
-              <p className="lists-invite-desc">Στείλε αυτόν τον κωδικό για να δει κάποιος την λίστα <strong>"{listName}"</strong>:</p>
+              <div className="lists-invite-actions">
+                <button className="lists-action-btn" onClick={() => { setRenameId(listId); setRenameName(listName || ''); setView('rename') }}>
+                  ✏️ Αλλαγή ονόματος
+                </button>
+                <button className="lists-action-btn lists-action-btn--danger" onClick={() => { onDelete(listId); onClose() }}>
+                  🗑️ Διαγραφή λίστας
+                </button>
+              </div>
+              <p className="lists-invite-desc">Κοινοποίησε τη λίστα <strong>"{listName}"</strong>:</p>
               <div className="lists-invite-code">{inviteCode}</div>
               <button className="lists-submit-btn" onClick={handleShare}>📤 Κοινοποίηση</button>
               <button className="lists-action-btn" onClick={handleCopyCode}>
