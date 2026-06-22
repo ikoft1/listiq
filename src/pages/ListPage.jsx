@@ -35,6 +35,7 @@ export default function ListPage({ onSignOut }) {
   })
 
   const debounceRef = useRef(null)
+  const autoOpenedRef = useRef(false)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -144,12 +145,14 @@ export default function ListPage({ onSignOut }) {
     }
   }
 
-  // Μετά το login χωρίς λίστα → άνοιξε αυτόματα το name view
+  // Μετά το login χωρίς λίστα → άνοιξε αυτόματα το name view (μία φορά)
   useEffect(() => {
-    if (user && !listId) {
+    if (user && !listId && !autoOpenedRef.current) {
+      autoOpenedRef.current = true
       setAutoShowInvite(true)
       setShowLists(true)
     }
+    if (!user) autoOpenedRef.current = false
   }, [user, listId])
 
   function handleSaveList() {
@@ -366,7 +369,7 @@ export default function ListPage({ onSignOut }) {
       )}
 
       {showUserMenu && (
-        <div className="user-menu-backdrop" onClick={() => setShowUserMenu(false)} />
+        <div className="user-menu-backdrop" onMouseDown={() => setShowUserMenu(false)} />
       )}
     </div>
   )
