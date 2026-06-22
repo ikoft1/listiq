@@ -153,7 +153,7 @@ export default function ListPage({ onSignOut }) {
   }, [user, listId])
 
   function handleSaveList() {
-    setAutoShowInvite(true)
+    setAutoShowInvite(false)
     setShowLists(true)
   }
 
