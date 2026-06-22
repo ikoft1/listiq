@@ -35,7 +35,7 @@ const TOUR_STEPS = [
 export default function GuidedTour({ onDone, itemCount }) {
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState(null)
-  const prevItemCount = useRef(itemCount)
+  const prevItemCount = useRef(0)
 
   const current = TOUR_STEPS[step]
   const isLast = step === TOUR_STEPS.length - 1
