@@ -149,14 +149,10 @@ export default function ListsModal({
                     <span className="lists-item-name">{l.name}</span>
                     {l.user_id && l.user_id !== user?.id && <span className="lists-item-shared">κοινή</span>}
                   </button>
-                  <div className="lists-item-actions">
-                    {l.user_id === user?.id && (
-                      <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
-                    )}
-                    {l.user_id === user?.id && (
-                      <button onClick={() => onDelete(l.id)}>🗑️</button>
-                    )}
-                  </div>
+                 <div className="lists-item-actions">
+  <button onClick={() => { setRenameId(l.id); setRenameName(l.name); setView('rename') }}>✏️</button>
+  <button onClick={() => onDelete(l.id)}>🗑️</button>
+</div>
                 </div>
               ))}
             </div>
