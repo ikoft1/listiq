@@ -8,6 +8,7 @@ import ShoppingCartPage from './ShoppingCartPage'
 import FavouritesModal from '../components/FavouritesModal'
 import OnboardingPage from './OnboardingPage'
 import ListsModal from '../components/ListsModal'
+import GuidedTour from '../components/GuidedTour'
 import './ListPage.css'
 
 export default function ListPage({ onSignOut }) {
@@ -30,6 +31,9 @@ export default function ListPage({ onSignOut }) {
   const [showLists, setShowLists] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [autoShowInvite, setAutoShowInvite] = useState(false)
+  const [showTour, setShowTour] = useState(() => {
+    return localStorage.getItem('listiq_tour_done') !== 'true'
+  })
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem('listiq_onboarding_done') === 'true'
   })
