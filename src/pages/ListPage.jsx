@@ -204,7 +204,7 @@ export default function ListPage({ onSignOut }) {
           )}
 
           {user && (
-            <div className="user-menu-wrap">
+            <div className="user-menu-wrap" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setShowUserMenu(false) }}>
               <button className="btn-user" onClick={() => setShowUserMenu(v => !v)} title={user.email}>
                 {user.user_metadata?.avatar_url
                   ? <img src={user.user_metadata.avatar_url} className="user-avatar" alt="avatar" />
@@ -212,7 +212,7 @@ export default function ListPage({ onSignOut }) {
                 }
               </button>
               {showUserMenu && (
-                <div className="user-menu" onClick={e => e.stopPropagation()}>
+                <div className="user-menu">
                   <div className="user-menu-email">{user.email}</div>
                   <button className="user-menu-item" onClick={() => { setShowUserMenu(false); setShowLists(true) }}>
                     📋 Οι λίστες μου
@@ -368,9 +368,7 @@ export default function ListPage({ onSignOut }) {
         />
       )}
 
-      {showUserMenu && (
-        <div className="user-menu-backdrop" onClick={() => setShowUserMenu(false)} />
-      )}
+
     </div>
   )
 }
