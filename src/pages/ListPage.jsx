@@ -144,22 +144,18 @@ export default function ListPage({ onSignOut }) {
     }
   }
 
-  // Migration: μεταφορά guest items στο Supabase μετά το login
+  // Μετά το login χωρίς λίστα → άνοιξε αυτόματα το name view
   useEffect(() => {
-    if (user && listId && items.length > 0) {
-      const guestItems = JSON.parse(localStorage.getItem('listiq_guest_items') || '[]')
-      if (guestItems.length > 0) {
-        guestItems.forEach(item => addItem(item))
-        localStorage.removeItem('listiq_guest_items')
-      }
+    if (user && !listId) {
+      setAutoShowInvite(true)
+      setShowLists(true)
     }
   }, [user, listId])
 
-  // Save guest items πριν το login
- function handleSaveList() {
-  setAutoShowInvite(true)
-  setShowLists(true)
-}
+  function handleSaveList() {
+    setAutoShowInvite(true)
+    setShowLists(true)
+  }
 
   if (!onboardingDone) {
     return (
@@ -191,7 +187,6 @@ export default function ListPage({ onSignOut }) {
         <div className="header-top">
           <h1 className="logo">Listiq</h1>
 
-          {/* Αποθήκευση λίστας — πάντα ορατό */}
           <button className="btn-save-list" onClick={handleSaveList} title="Αποθήκευση & κοινοποίηση λίστας">
             {user ? (listName || 'Λίστα μου') + ' ▾' : '💾 Αποθήκευση'}
           </button>
@@ -205,7 +200,6 @@ export default function ListPage({ onSignOut }) {
             <button className="btn-share" onClick={handleShare} title="Κοινοποίηση λίστας">📤</button>
           )}
 
-          {/* Avatar με menu */}
           {user && (
             <div className="user-menu-wrap">
               <button className="btn-user" onClick={() => setShowUserMenu(v => !v)} title={user.email}>
@@ -371,7 +365,6 @@ export default function ListPage({ onSignOut }) {
         />
       )}
 
-      {/* Click outside για user menu */}
       {showUserMenu && (
         <div className="user-menu-backdrop" onClick={() => setShowUserMenu(false)} />
       )}
