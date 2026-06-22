@@ -49,10 +49,12 @@ export default function GuidedTour({ onDone, itemCount }) {
         setRect(r)
       }
     }
-    updateRect()
+    // Μικρό delay για να σιγουρευτούμε ότι το DOM είναι έτοιμο
+    const timer = setTimeout(updateRect, 100)
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect)
     return () => {
+      clearTimeout(timer)
       window.removeEventListener('resize', updateRect)
       window.removeEventListener('scroll', updateRect)
     }
@@ -79,7 +81,18 @@ export default function GuidedTour({ onDone, itemCount }) {
     return () => el.removeEventListener('click', handler)
   }, [step])
 
-  if (!rect) return null
+  if (!rect) return (
+    <div className="tour-overlay">
+      <div className="tour-tooltip" style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
+        <div className="tour-step-badge">{step + 1} / {TOUR_STEPS.length}</div>
+        <h3 className="tour-title">{current.title}</h3>
+        <p className="tour-desc">{current.desc}</p>
+        <div className="tour-actions">
+          <button className="tour-skip" onClick={onDone}>Παράλειψη οδηγού</button>
+        </div>
+      </div>
+    </div>
+  )
 
   const PADDING = 8
   const spotStyle = {
