@@ -373,6 +373,15 @@ export default function ListPage({ onSignOut }) {
       )}
 
 
+      {showTour && (
+        <GuidedTour
+          itemCount={items.length}
+          onDone={() => {
+            setShowTour(false)
+            localStorage.setItem('listiq_tour_done', 'true')
+          }}
+        />
+      )}
     </div>
   )
 }
