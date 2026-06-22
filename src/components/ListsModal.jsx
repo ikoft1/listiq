@@ -48,10 +48,9 @@ export default function ListsModal({
   async function handleSaveName() {
     if (!newName.trim()) return
     setLoading(true)
-    // Μετονόμασε την τρέχουσα λίστα
-    await onRename(listId, newName.trim())
+    await onCreate(newName.trim())
     setLoading(false)
-    setView('invite') // μετά → κοινοποίηση
+    onClose()
   }
 
   async function handleJoin() {
